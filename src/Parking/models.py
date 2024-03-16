@@ -24,3 +24,4 @@ class ParkingSlot(models.Model):
     name = models.CharField(max_length=50)
     coords = models.ManyToManyField(Coordinates, related_name='slot')
     parking = models.ForeignKey(Parking, on_delete=models.CASCADE, related_name='slots')
+    is_occupied = models.BooleanField(default=False)
