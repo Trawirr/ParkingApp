@@ -20,8 +20,34 @@ function calculateMiddlePoint(points) {
 
 const ParkingCanvas = () => {
   const [parkingData, setParkingData] = useState([]);
-  const [parkingSlotsData, setParkingSlotsData] = useState([]);
-  const [hoveredShape, setHoveredShape] = useState(null);
+  const [parkingSlotsData, setParkingSlotsData] = useState(
+    {
+      "coords": [],
+      "occupancy": []
+    }
+  );
+
+  useEffect(() => {
+    // Fetch parking coordinates from Django Rest API
+    axios.get('http://localhost:8000/api/parking_coords/119')
+      .then(response => {
+        setParkingData(response.data['coords']);
+      })
+      .catch(error => {
+        console.error('Error fetching parking data:', error);
+      });
+  }, []);
+
+  useEffect(() => {
+    // Fetch parking slots' coordinates from Django Rest API
+    axios.get('http://localhost:8000/api/parking_slots_coords/119')
+      .then(response => {
+        setParkingSlotsData(response.data);
+      })
+      .catch(error => {
+        console.error('Error fetching parking data:', error);
+      });
+  }, []);
 
   function drawParking(mouseX=null, mouseY=null){
     const canvas = document.getElementById('parkingCanvas');
@@ -45,7 +71,7 @@ const ParkingCanvas = () => {
     });
 
     // Draw parking slots' shapes on the canvas
-    parkingSlotsData.forEach((shape, index) => {
+    parkingSlotsData['coords'].forEach((shape, index) => {
       ctx.beginPath();
       ctx.moveTo(shape[0][0], shape[0][1]);
 
@@ -55,11 +81,21 @@ const ParkingCanvas = () => {
 
       ctx.closePath();
       ctx.lineWidth = 2;
-      ctx.setLineDash(hoveredShape === index ? [] : [10, 5]);
-      ctx.strokeStyle = 'rgba(20, 150, 0, 0.5)';
+      ctx.setLineDash([10, 5]);
+      if (parkingSlotsData['occupancy'][index]){
+        ctx.strokeStyle = 'rgba(150, 0, 0, 0.5)';
+      }
+      else {
+        ctx.strokeStyle = 'rgba(20, 150, 10, 0.5)';
+      }
       ctx.stroke();
       if (ctx.isPointInPath(mouseX, mouseY)){
-        ctx.fillStyle = 'rgba(20, 150, 0, 0.1)';
+        if (parkingSlotsData['occupancy'][index]){
+          ctx.fillStyle = 'rgba(150, 0, 0, 0.2)';
+        }
+        else {
+          ctx.fillStyle = 'rgba(20, 150, 10, 0.2)';
+        }
         ctx.fill();
       }
 
@@ -74,28 +110,6 @@ const ParkingCanvas = () => {
   }
 
   useEffect(() => {
-    // Fetch parking coordinates from Django Rest API
-    axios.get('http://localhost:8000/api/parking_coords/119')
-      .then(response => {
-        setParkingData(response.data['coords']);
-      })
-      .catch(error => {
-        console.error('Error fetching parking data:', error);
-      });
-  }, []);
-
-  useEffect(() => {
-    // Fetch parking slots' coordinates from Django Rest API
-    axios.get('http://localhost:8000/api/parking_slots_coords/119')
-      .then(response => {
-        setParkingSlotsData(response.data['coords']);
-      })
-      .catch(error => {
-        console.error('Error fetching parking data:', error);
-      });
-  }, []);
-
-  useEffect(() => {
     const canvas = document.getElementById('parkingCanvas');
     const ctx = canvas.getContext('2d');
 
@@ -103,7 +117,6 @@ const ParkingCanvas = () => {
       const rect = canvas.getBoundingClientRect();
       const x = event.clientX - rect.left;
       const y = event.clientY - rect.top;
-      console.log(x, y);
       drawParking(x, y);
     };
 
@@ -117,7 +130,7 @@ const ParkingCanvas = () => {
   useEffect(() => {
      drawParking();
 
-  }, [parkingData, parkingSlotsData, hoveredShape]);
+  }, [parkingData, parkingSlotsData]);
 
   return (
     <canvas

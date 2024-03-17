@@ -9,8 +9,11 @@ def hello_world(request):
 
 @api_view(['GET'])
 def parking_coords(request, parking_id: int):
-    return Response({'coords': [Parking.objects.get(id=parking_id).coords_list]})
+    parking = Parking.objects.get(id=parking_id)
+    return Response({'coords': [parking.coords_list]})
 
 @api_view(['GET'])
 def parking_slots_coords(request, parking_id: int):
-    return Response({'coords': Parking.objects.get(id=parking_id).slots_coords_list})
+    parking = Parking.objects.get(id=parking_id)
+    print(parking.slots_data)
+    return Response(parking.slots_data)

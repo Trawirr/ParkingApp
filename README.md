@@ -1,2 +1,0 @@
-# ParkingApp
-Study research project
