@@ -22,10 +22,11 @@ class Parking(models.Model):
     
     @property
     def slots_data(self) -> dict:
-        data = {'coords': [], 'occupancy': []}
+        data = {'coords': [], 'occupancy': [], 'name': []}
         for ps in self.slots.all():
             data['coords'].append([[c.x, c.y] for c in ps.coords.all()])
             data['occupancy'].append(ps.is_occupied)
+            data['name'].append(ps.name)
         return data
 
 class ParkingSlot(models.Model):

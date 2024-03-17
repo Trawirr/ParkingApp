@@ -23,7 +23,8 @@ const ParkingCanvas = () => {
   const [parkingSlotsData, setParkingSlotsData] = useState(
     {
       "coords": [],
-      "occupancy": []
+      "occupancy": [],
+      "name": []
     }
   );
 
@@ -101,7 +102,7 @@ const ParkingCanvas = () => {
 
       // Adding text in the middle of the shape
       const middlePoint = calculateMiddlePoint(shape);
-      const text = "ABC";
+      const text = parkingSlotsData["name"][index];
       ctx.font = '14px Arial';
       ctx.fillStyle = 'black';
       ctx.textAlign = 'center';
