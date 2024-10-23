@@ -2,7 +2,7 @@ import sys
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QTableWidget,
     QTableWidgetItem, QPushButton, QMenuBar, QAction, QScrollArea, QCheckBox, QLineEdit,
-    QFileDialog, 
+    QFileDialog, QAbstractItemView
 )
 from PyQt5.QtCore import Qt, QStringListModel
 from PyQt5 import QtGui
@@ -37,7 +37,7 @@ class MainWindow(QMainWindow):
         main_layout = QHBoxLayout(main_widget)
         right_layout = QVBoxLayout()
 
-        self.canvas = FigureCanvas(Figure(figsize=(18, 8)))
+        self.canvas = FigureCanvas(Figure(figsize=(16, 8)))
         self.ax = self.canvas.figure.subplots()
         self.ax.plot([0, 1, 2], [0, 1, 4])
 
@@ -54,8 +54,10 @@ class MainWindow(QMainWindow):
         self.table_widget.setColumnWidth(1, 150)
         self.table_widget.setColumnWidth(2, 500)
 
+        self.table_widget.setHorizontalScrollMode(QAbstractItemView.ScrollPerPixel)
         self.table_widget.itemChanged.connect(self.handle_item_changed)
 
+        # initial example items
         for i in range(10):
             checkbox = QCheckBox()
             checkbox.setChecked(self.label_items[i].selected)
@@ -144,7 +146,6 @@ class MainWindow(QMainWindow):
         self.image_path = QFileDialog.getOpenFileName(self, 'Load file', '', "Parking images (*.jpg *.png)")[0]
         if self.image_path:
             self.image = mpimg.imread(self.image_path)
-            print(f"selected image: {self.image_path=}")
             image_name = self.image_path
             for sep in ['\\']:
                 image_name = image_name.replace(sep, '/')
