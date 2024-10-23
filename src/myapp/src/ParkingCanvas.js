@@ -85,19 +85,19 @@ const ParkingCanvas = () => {
       ctx.setLineDash([10, 5]);
       if (parkingSlotsData['occupancy'][index]){
         ctx.strokeStyle = 'rgba(150, 0, 0, 0.5)';
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(150, 0, 0, 0.2)';
+        ctx.fill();
       }
       else {
         ctx.strokeStyle = 'rgba(20, 150, 10, 0.5)';
-      }
-      ctx.stroke();
-      if (ctx.isPointInPath(mouseX, mouseY)){
-        if (parkingSlotsData['occupancy'][index]){
-          ctx.fillStyle = 'rgba(150, 0, 0, 0.2)';
+        ctx.stroke();
+        if (ctx.isPointInPath(mouseX, mouseY)){
+          if (!parkingSlotsData['occupancy'][index]){
+            ctx.fillStyle = 'rgba(20, 150, 10, 0.2)';
+            ctx.fill();
+          }
         }
-        else {
-          ctx.fillStyle = 'rgba(20, 150, 10, 0.2)';
-        }
-        ctx.fill();
       }
 
       // Adding text in the middle of the shape

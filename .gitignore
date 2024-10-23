@@ -1,0 +1,8 @@
+venv/
+
+polygonex/logos/
+src/myapp/node_modules/
+
+*.jpg
+*.png
+*.json
