@@ -15,10 +15,14 @@ import json
 import time
 
 class LabelItem:
-    def __init__(self, selected=False, name="", tags=""):
+    def __init__(self, selected=False, color="#000", name="", tags="", points=[]):
         self.selected = selected
+        self.color = color
         self.name = name
         self.tags = tags
+        self.points = points
+
+    
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -52,10 +56,11 @@ class MainWindow(QMainWindow):
         select_all_button = QPushButton("Select All")
         select_all_button.clicked.connect(self.select_all_items)
 
-        self.table_widget = QTableWidget(10, 4)
+        self.table_widget = QTableWidget(0, 4)
         self.table_widget.setHorizontalHeaderLabels(["Select", "Color", "Name", "Tags"])
         self.table_widget.horizontalHeader().setDefaultAlignment(Qt.AlignLeft)
         self.table_widget.verticalHeader().setVisible(False)
+        self.table_widget.setShowGrid(True)
         self.table_widget.setColumnWidth(0, 50)
         self.table_widget.setColumnWidth(1, 50)
         self.table_widget.setColumnWidth(2, 150)
@@ -67,31 +72,8 @@ class MainWindow(QMainWindow):
 
         # initial example items
         for i in range(10):
-            checkbox = QCheckBox()
-            checkbox.setChecked(self._label_items[i].selected)
-            checkbox.stateChanged.connect(lambda state, row=i: self.update_item_state(row, "selected", state == Qt.Checked))
+            self.add_item()
 
-            checkbox_widget = QWidget()
-            checkbox_layout = QHBoxLayout(checkbox_widget)
-            checkbox_layout.addWidget(checkbox)
-            checkbox_layout.setAlignment(Qt.AlignCenter)
-            checkbox_layout.setContentsMargins(0, 0, 0, 0)
-            checkbox_widget.setLayout(checkbox_layout)
-            self.table_widget.setCellWidget(i, 0, checkbox_widget)
-
-            color_item = QTableWidgetItem()
-            color_item.setFlags(Qt.ItemIsEnabled)
-            self.table_widget.setItem(i, 1, color_item)
-
-            item_name = QTableWidgetItem(self._label_items[i].name or f"Item {i + 1}")
-            item_name.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled | Qt.ItemIsEditable)
-            self.table_widget.setItem(i, 2, item_name)
-
-            tags = QTableWidgetItem(self._label_items[i].tags or f"Tags {i + 1}")
-            tags.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled | Qt.ItemIsEditable)
-            self.table_widget.setItem(i, 3, tags)
-
-        # Buttons under the list
         button_1 = QPushButton("Button 1")
         button_1.clicked.connect(self.button_1_clicked)
         button_2 = QPushButton("Button 2")
@@ -100,9 +82,8 @@ class MainWindow(QMainWindow):
         button_layout.addWidget(button_1)
         button_layout.addWidget(button_2)
 
-        # Menu with two options
         menu_bar = self.menuBar()
-        file_menu = menu_bar.addMenu("File")
+        file_menu = menu_bar.addMenu("Menu")
         option1 = QAction("Load", self)
         option1.triggered.connect(self.menu_option1_selected)
         option2 = QAction("Save", self)
@@ -116,6 +97,66 @@ class MainWindow(QMainWindow):
 
         main_layout.addWidget(self._canvas)
         main_layout.addLayout(right_layout)
+
+    def add_item(self, selected=False, color="#000", name="", tags="", points=[]):
+        new_item = LabelItem(selected, color, name, tags, points)
+        self._label_items.append(new_item)
+        row_position = self.table_widget.rowCount()
+        self.table_widget.insertRow(row_position)
+        
+        checkbox = QCheckBox()
+        checkbox.setChecked(self._label_items[row_position].selected)
+        checkbox.stateChanged.connect(lambda state, row=row_position: self.update_item_state(row, "selected", state == Qt.Checked))
+
+        checkbox_widget = QWidget()
+        checkbox_layout = QHBoxLayout(checkbox_widget)
+        checkbox_layout.addWidget(checkbox)
+        checkbox_layout.setAlignment(Qt.AlignCenter)
+        checkbox_layout.setContentsMargins(0, 0, 0, 0)
+        checkbox_widget.setLayout(checkbox_layout)
+        self.table_widget.setCellWidget(row_position, 0, checkbox_widget)
+
+        name_item = QTableWidgetItem(f"Item {row_position + 1}")
+        name_item.setFlags(name_item.flags() | Qt.ItemIsEditable)
+        self.table_widget.setItem(row_position, 2, name_item)
+
+        desc_item = QTableWidgetItem(f"Description {row_position + 1}")
+        desc_item.setFlags(desc_item.flags() | Qt.ItemIsEditable)
+        self.table_widget.setItem(row_position, 3, desc_item)
+
+        color_item = QTableWidgetItem()
+        color_item.setFlags(Qt.ItemIsEnabled)
+        self.table_widget.setItem(row_position, 1, color_item)
+
+    def add_item2(self, selected=False, color="#000", name="", tags="", points=[]):
+        item_index = len(self._label_items)
+        new_item = LabelItem(selected, color, name, tags, points)
+        self._label_items.append(new_item)
+
+        checkbox = QCheckBox()
+        checkbox.setChecked(self._label_items[item_index].selected)
+        checkbox.stateChanged.connect(lambda state, row=item_index: self.update_item_state(row, "selected", state == Qt.Checked))
+
+        checkbox_widget = QWidget()
+        checkbox_layout = QHBoxLayout(checkbox_widget)
+        checkbox_layout.addWidget(checkbox)
+        checkbox_layout.setAlignment(Qt.AlignCenter)
+        checkbox_layout.setContentsMargins(0, 0, 0, 0)
+        checkbox_widget.setLayout(checkbox_layout)
+        self.table_widget.setCellWidget(item_index, 0, checkbox_widget)
+
+        color_item = QTableWidgetItem()
+        color_item.setFlags(Qt.ItemIsEnabled)
+        self.table_widget.setItem(item_index, 1, color_item)
+
+        item_name = QTableWidgetItem(self._label_items[item_index].name or f"Item {item_index + 1}")
+        item_name.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled | Qt.ItemIsEditable)
+        self.table_widget.setItem(item_index, 2, item_name)
+
+        tags = QTableWidgetItem(self._label_items[item_index].tags or f"Tags {item_index + 1}")
+        tags.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled | Qt.ItemIsEditable)
+        self.table_widget.setItem(item_index, 3, tags)
+        print("new item added")
 
     def update_item_state(self, row, field, value):
         if field == "selected":
@@ -231,7 +272,6 @@ class MainWindow(QMainWindow):
         self._canvas.draw()
 
     def select_color(self, row):
-        """Open a color dialog and set the selected color in the row."""
         color = QColorDialog.getColor()
 
         if color.isValid():
@@ -239,6 +279,7 @@ class MainWindow(QMainWindow):
             color_item = QTableWidgetItem()
             color_item.setBackground(color)
             self.table_widget.setItem(row, 1, color_item)
+            self._label_items[row].color = color.name()
             
             print(f"Color for row {row} selected: {color.name()}")
 
