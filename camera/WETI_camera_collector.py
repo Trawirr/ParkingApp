@@ -75,10 +75,15 @@ def collect_videos(rtsp_url: str, sleep: int, length: int, output_dir: str):
         media.release()
         print("Exiting...")
 
+def load_url(path: str):
+    with open(path) as f:
+        url = f.read().strip()
+    return url
 
 if __name__ == "__main__":
+    url = load_url(r"C:\Users\gtraw\OneDrive\Pulpit\UM sem. 2\ProjektBadawczy\apps\camera\pass\weti2.txt")
     args = parse_args()
     if args.image:
-        collect_images(rtsp_url, args.sleep, args.path)
+        collect_images(url, args.sleep, args.path)
     elif args.video:
-        collect_videos(rtsp_url, args.sleep, args.length, args.path)
+        collect_videos(url, args.sleep, args.length, args.path)
