@@ -27,7 +27,7 @@ class MainWindow(QMainWindow):
         self.label_items = [LabelItem() for i in range(10)]
 
         self.setWindowTitle("Polygonex")
-        self.setWindowIcon(QtGui.QIcon(r'C:\Users\gtraw\OneDrive\Pulpit\UM sem. 2\logos\l4.jpg'))
+        self.setWindowIcon(QtGui.QIcon(r'C:\Users\gtraw\OneDrive\Pulpit\UM sem. 2\ProjektBadawczy\apps\polygonex\logos\l4.jpg'))
         self.setGeometry(100, 100, 1000, 600)
 
         # Create main widget
@@ -40,6 +40,9 @@ class MainWindow(QMainWindow):
         self.canvas = FigureCanvas(Figure(figsize=(18, 8)))
         self.ax = self.canvas.figure.subplots()
         self.ax.plot([0, 1, 2], [0, 1, 4])
+
+        self.canvas.mpl_connect('button_press_event', self.plot_click)
+        self.canvas.mpl_connect('scroll_event', self.plot_scroll)
 
         select_all_button = QPushButton("Select All")
         select_all_button.clicked.connect(self.select_all_items)
@@ -124,6 +127,12 @@ class MainWindow(QMainWindow):
             checkbox.setChecked(True)
             self.update_item_state(row, "selected", True)
 
+    def plot_click(self, event):
+        print("plot click")
+
+    def plot_scroll(self, event):
+        print("plot scroll")
+
     def button_1_clicked(self):
         print("Button 1 clicked")
 
@@ -132,16 +141,17 @@ class MainWindow(QMainWindow):
 
     def menu_option1_selected(self):
         print("Load option selected")
-        self.image_path = QFileDialog.getOpenFileName(self, 'Open file', '', "Image files123 (*.jpg *.gif)")[0]
-        self.image = mpimg.imread(self.image_path)
-        print(f"selected image: {self.image_path=}")
-        image_name = self.image_path
-        for sep in ['\\']:
-            image_name = image_name.replace(sep, '/')
-        image_name = ''.join(image_name.split('/')[-1].split('.')[:-1])
-        self.image_name = image_name
-        
-        self.update_image()
+        self.image_path = QFileDialog.getOpenFileName(self, 'Load file', '', "Parking images (*.jpg *.png)")[0]
+        if self.image_path:
+            self.image = mpimg.imread(self.image_path)
+            print(f"selected image: {self.image_path=}")
+            image_name = self.image_path
+            for sep in ['\\']:
+                image_name = image_name.replace(sep, '/')
+            image_name = ''.join(image_name.split('/')[-1].split('.')[:-1])
+            self.image_name = image_name
+            
+            self.update_image()
 
     def menu_option2_selected(self):
         print("Save option selected")
