@@ -197,7 +197,21 @@ class MainWindow(QMainWindow):
             self._drag = False
 
     def plot_move(self, event):
-        pass
+        if self._image is not None:
+            if self._drag and self.press_pos and event.xdata is not None and event.ydata is not None:
+                print("event", event.xdata, event.ydata)
+                dx = event.xdata - self.press_pos[0]
+                dy = event.ydata - self.press_pos[1]
+                self.press_pos = (event.xdata, event.ydata)
+                print("dx dy", dx, dy)
+
+                self._ax.set_xlim(self._ax.get_xlim() - dx)
+                self._ax.set_ylim(self._ax.get_ylim() - dy)
+                self._center = [sum(self._ax.get_xlim()) / 2, sum(self._ax.get_ylim()) / 2]
+
+                self._canvas.draw()
+            if not self.press_pos and event.xdata is not None and event.ydata is not None:
+                self.press_pos = (event.xdata, event.ydata)
 
     def plot_scroll(self, event):
         print("scroll", event.step, event.xdata, event.ydata)
