@@ -35,6 +35,8 @@ class MainWindow(QMainWindow):
         self._zoom = None
         self._center = None
         self._points = []
+        self._drag = False
+        self._image = None
 
         self.setWindowTitle("Polygonex")
         self.setWindowIcon(QtGui.QIcon(r'C:\Users\gtraw\OneDrive\Pulpit\UM sem. 2\ProjektBadawczy\apps\polygonex\logos\l4.jpg'))
@@ -51,6 +53,8 @@ class MainWindow(QMainWindow):
         self._ax = self._canvas.figure.subplots()
 
         self._canvas.mpl_connect('button_press_event', self.plot_click)
+        self._canvas.mpl_connect('motion_notify_event', self.plot_move)
+        self._canvas.mpl_connect('button_release_event', self.plot_release)
         self._canvas.mpl_connect('scroll_event', self.plot_scroll)
 
         select_all_button = QPushButton("Select All")
@@ -64,7 +68,7 @@ class MainWindow(QMainWindow):
         self.table_widget.setColumnWidth(0, 50)
         self.table_widget.setColumnWidth(1, 50)
         self.table_widget.setColumnWidth(2, 150)
-        self.table_widget.setColumnWidth(3, 500)
+        self.table_widget.setColumnWidth(3, 300)
 
         self.table_widget.setHorizontalScrollMode(QAbstractItemView.ScrollPerPixel)
         self.table_widget.itemChanged.connect(self.handle_item_changed)
@@ -127,35 +131,6 @@ class MainWindow(QMainWindow):
         color_item = QTableWidgetItem()
         color_item.setFlags(Qt.ItemIsEnabled)
         self.table_widget.setItem(row_position, 1, color_item)
-
-    def add_item2(self, selected=False, color="#000", name="", tags="", points=[]):
-        item_index = len(self._label_items)
-        new_item = LabelItem(selected, color, name, tags, points)
-        self._label_items.append(new_item)
-
-        checkbox = QCheckBox()
-        checkbox.setChecked(self._label_items[item_index].selected)
-        checkbox.stateChanged.connect(lambda state, row=item_index: self.update_item_state(row, "selected", state == Qt.Checked))
-
-        checkbox_widget = QWidget()
-        checkbox_layout = QHBoxLayout(checkbox_widget)
-        checkbox_layout.addWidget(checkbox)
-        checkbox_layout.setAlignment(Qt.AlignCenter)
-        checkbox_layout.setContentsMargins(0, 0, 0, 0)
-        checkbox_widget.setLayout(checkbox_layout)
-        self.table_widget.setCellWidget(item_index, 0, checkbox_widget)
-
-        color_item = QTableWidgetItem()
-        color_item.setFlags(Qt.ItemIsEnabled)
-        self.table_widget.setItem(item_index, 1, color_item)
-
-        item_name = QTableWidgetItem(self._label_items[item_index].name or f"Item {item_index + 1}")
-        item_name.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled | Qt.ItemIsEditable)
-        self.table_widget.setItem(item_index, 2, item_name)
-
-        tags = QTableWidgetItem(self._label_items[item_index].tags or f"Tags {item_index + 1}")
-        tags.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled | Qt.ItemIsEditable)
-        self.table_widget.setItem(item_index, 3, tags)
         print("new item added")
 
     def update_item_state(self, row, field, value):
@@ -202,17 +177,32 @@ class MainWindow(QMainWindow):
                 else:
                     self._point_tmp = self._ax.plot(x, y, 'ro')
                 self._points.append([x, y])
+                self._canvas.draw()
+
+            # wheel button
+            elif event.button == 2:
+                self.press_pos = (event.xdata, event.ydata)
+                self._drag = True
 
             # RMB - end of sequence
             elif event.button == 3:
-                pass
+                self.add_item(points=self._points)
+                self._points = []
+                self.display_image()
 
-        self.update_image()
+        # self.update_image()
+
+    def plot_release(self, event):
+        if event.button == 2:
+            self._drag = False
+
+    def plot_move(self, event):
+        pass
 
     def plot_scroll(self, event):
         print("scroll", event.step, event.xdata, event.ydata)
-        self._zoom = max(1, self._zoom + event.step)
-        self._center = [event.xdata, event.ydata]
+        self._zoom = max(1, self._zoom - event.step / 4)
+        self._mouse_position = [event.xdata, event.ydata]
         self.update_image()
 
     def button_1_clicked(self):
@@ -245,37 +235,39 @@ class MainWindow(QMainWindow):
 
             self._center = [self._image.shape[0] // 2, self._image.shape[1] // 2]
             self._zoom = 1
+            self.press_pos = None
 
     def update_image(self):
-        print(f"updating: {self._center=}, {self._zoom=}")
+        print(f"Updating plot image...")
         # use zoom
+        mouse_x, mouse_y = self._mouse_position
+        zoom = 1 + ((self._zoom - 1) / 2) ** 2
         height_img, width_img, _ = self._image.shape
-        height_zoomed = height_img // self._zoom // 2
-        width_zoomed = width_img // self._zoom // 2
-        print(f"{height_img=}, {width_img=}, {self._zoom=} => {height_zoomed=}, {width_zoomed=}")
+        height_zoomed = height_img // zoom // 2
+        width_zoomed = width_img // zoom // 2
 
-        print(f"before {self._center=}")
-        # fix x
-        self._center[0] += min(0, width_zoomed - self._center[0])
-        self._center[0] -= min(0, self._center[0] + width_zoomed - width_img)
+        x_lims, y_lims = self._ax.get_xlim(), self._ax.get_ylim()
+        w1 = (x_lims[1] - x_lims[0]) / 2
+        h1 = (y_lims[0] - y_lims[1]) / 2
 
-        # fix y
-        self._center[1] += min(0, height_zoomed - self._center[1])
-        self._center[1] -= min(0, self._center[1] + height_zoomed - height_img)
-        print(f"after {self._center=}")
+        mouse_diff = [mouse_x - self._center[0], mouse_y - self._center[1]] # [cmx, cmy]
+        mouse_diff_new = [width_zoomed / w1 * mouse_diff[0], height_zoomed / h1 * mouse_diff[1]]
 
-        # set lims
+        self._center = [self._mouse_position[i] - mouse_diff_new[i] for i in range(2)]
+
+        # fit lims in image shape
+        self._center[0] = min(max(width_zoomed, self._center[0]), width_img - width_zoomed)
+        self._center[1] = min(max(height_zoomed, self._center[1]), height_img - height_zoomed)
+
         self._ax.set_xlim(self._center[0] - width_zoomed, self._center[0] + width_zoomed)
-        self._ax.set_ylim(self._center[1] + height_zoomed, self._center[1] - height_zoomed)        
+        self._ax.set_ylim(self._center[1] + height_zoomed, self._center[1] - height_zoomed)    
 
-        # draw updated image
         self._canvas.draw()
 
     def select_color(self, row):
         color = QColorDialog.getColor()
 
         if color.isValid():
-            # Update the background color of the row (color column)
             color_item = QTableWidgetItem()
             color_item.setBackground(color)
             self.table_widget.setItem(row, 1, color_item)
