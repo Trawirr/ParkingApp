@@ -29,7 +29,8 @@ class MainWindow(QMainWindow):
         super().__init__()
 
         # table items
-        self._label_items = [LabelItem() for i in range(10)]
+        self._label_items = []
+        self._polygons = {}
 
         # image parameters
         self._zoom = None
@@ -75,8 +76,8 @@ class MainWindow(QMainWindow):
         self.table_widget.cellClicked.connect(self.handle_cell_clicked)
 
         # initial example items
-        for i in range(10):
-            self.add_item()
+        # for i in range(10):
+        #     self.add_item()
 
         button_1 = QPushButton("Button 1")
         button_1.clicked.connect(self.button_1_clicked)
@@ -101,6 +102,8 @@ class MainWindow(QMainWindow):
 
         main_layout.addWidget(self._canvas)
         main_layout.addLayout(right_layout)
+
+        print(f"number of items: {len(self._label_items)}")
 
     def add_item(self, selected=False, color="#000", name="", tags="", points=[]):
         new_item = LabelItem(selected, color, name, tags, points)
@@ -132,14 +135,37 @@ class MainWindow(QMainWindow):
         color_item.setFlags(Qt.ItemIsEnabled)
         self.table_widget.setItem(row_position, 1, color_item)
         print("new item added")
+        print("all items:")
+        for i, item in enumerate(self._label_items):
+            print(i, item)
 
     def update_item_state(self, row, field, value):
         if field == "selected":
             self._label_items[row].selected = value
+            if value:
+                self.add_polygon(row)
+            else:
+                self.remove_polygon(row)
         elif field == "name":
             self._label_items[row].name = value
         elif field == "tags":
             self._label_items[row].tags = value
+
+    def add_polygon(self, row):
+        item = self._label_items[row]
+        if item.points:
+            polygon = plt.Polygon(item.points, closed=True, color=item.color, alpha=0.5)
+            self._ax.add_patch(polygon)
+            self._polygons[row] = polygon
+            self._canvas.draw()
+            print(f"Polygon added for row {row}")
+
+    def remove_polygon(self, row):
+        if row in self._polygons:
+            polygon = self._polygons.pop(row)
+            polygon.remove()  # Remove from axes
+            self._canvas.draw()
+            print(f"Polygon removed for row {row}")
 
     def handle_item_changed(self, item):
         row = item.row()
@@ -193,7 +219,7 @@ class MainWindow(QMainWindow):
         # self.update_image()
 
     def plot_release(self, event):
-        if event.button == 2:
+        if event.button == 3:
             self._drag = False
 
     def plot_move(self, event):
