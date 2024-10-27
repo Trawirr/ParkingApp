@@ -91,12 +91,15 @@ class MainWindow(QMainWindow):
 
         menu_bar = self.menuBar()
         file_menu = menu_bar.addMenu("Menu")
-        option1 = QAction("Load", self)
-        option1.triggered.connect(self.menu_option1_selected)
-        option2 = QAction("Save", self)
-        option2.triggered.connect(self.menu_option2_selected)
+        option1 = QAction("Load image", self)
+        option1.triggered.connect(self.menu_option_load_image)
+        option2 = QAction("Load json", self)
+        option2.triggered.connect(self.menu_option_load_json)
+        option3 = QAction("Save json", self)
+        option3.triggered.connect(self.menu_option_save)
         file_menu.addAction(option1)
         file_menu.addAction(option2)
+        file_menu.addAction(option3)
 
         right_layout.addWidget(select_all_button)
         right_layout.addWidget(self.table_widget)
@@ -177,6 +180,33 @@ class MainWindow(QMainWindow):
         
         print(f"Label items saved to {json_filename}")
 
+    def load_label_items(self, json_path):
+        try:
+            with open(json_path, "r") as json_file:
+                label_data = json.load(json_file)
+            
+            self._label_items.clear()
+            self.table_widget.setRowCount(0)  # Clear the table
+            
+            for row, item_data in enumerate(label_data):
+                # Extract item details from JSON data
+                name = item_data.get("name", "")
+                color = item_data.get("color", "#000")
+                tags = item_data.get("tags", "")
+                points = item_data.get("points", [])
+
+                # Add each item to the table
+                self.add_item(selected=False, color=color, name=name, tags=tags, points=points)
+
+                color_item = QTableWidgetItem()
+                color_item.setBackground(QtGui.QColor(color))
+                self.table_widget.setItem(row, 1, color_item)
+            
+            print(f"Loaded label items from {json_path}")
+
+        except Exception as e:
+            print(f"Failed to load label items: {e}")
+
     def add_polygon(self, row):
         item = self._label_items[row]
         if item.points:
@@ -213,7 +243,6 @@ class MainWindow(QMainWindow):
             checkbox_widget = self.table_widget.cellWidget(row, 0)
             checkbox = checkbox_widget.layout().itemAt(0).widget()
             checkbox.setChecked(True)
-            self.update_item_state(row, "selected", True)
 
     def plot_click(self, event):
         x, y = event.xdata, event.ydata
@@ -277,7 +306,7 @@ class MainWindow(QMainWindow):
     def button_2_clicked(self):
         print("Button 2 clicked")
 
-    def menu_option1_selected(self):
+    def menu_option_load_image(self):
         print("Load option selected")
         self._image_path = QFileDialog.getOpenFileName(self, 'Load file', '', "Parking images (*.jpg *.png)")[0]
         if self._image_path:
@@ -290,7 +319,13 @@ class MainWindow(QMainWindow):
             
             self.display_image()
 
-    def menu_option2_selected(self):
+    def menu_option_load_json(self):
+        print("Load Label Items option selected")
+        json_path = QFileDialog.getOpenFileName(self, 'Load Label Items', '', "JSON files (*.json)")[0]
+        if json_path:
+            self.load_label_items(json_path)
+
+    def menu_option_save(self):
         print("Save option selected")
         self.save_label_items()
 
