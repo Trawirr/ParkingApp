@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import json
 import time
+import os
 
 class LabelItem:
     def __init__(self, selected=False, color="#000", name="", tags="", points=[]):
@@ -21,8 +22,6 @@ class LabelItem:
         self.name = name
         self.tags = tags
         self.points = points
-
-    
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -38,18 +37,21 @@ class MainWindow(QMainWindow):
         self._points = []
         self._drag = False
         self._image = None
+        self._image_path = None
+        self._image_name = None
 
         self.setWindowTitle("Polygonex")
         self.setWindowIcon(QtGui.QIcon(r'C:\Users\gtraw\OneDrive\Pulpit\UM sem. 2\ProjektBadawczy\apps\polygonex\logos\l4.jpg'))
         self.setGeometry(100, 100, 1000, 600)
 
-        # Create main widget
+        # main widget
         main_widget = QWidget()
         self.setCentralWidget(main_widget)
 
         main_layout = QHBoxLayout(main_widget)
         right_layout = QVBoxLayout()
 
+        # matplotlib canvas
         self._canvas = FigureCanvas(Figure(figsize=(16, 8)))
         self._ax = self._canvas.figure.subplots()
 
@@ -150,6 +152,30 @@ class MainWindow(QMainWindow):
             self._label_items[row].name = value
         elif field == "tags":
             self._label_items[row].tags = value
+
+    def label_items_to_dict(self):
+        return [
+            {
+                "name": item.name,
+                "color": item.color,
+                "tags": item.tags,
+                "points": item.points
+            }
+            for item in self._label_items
+        ]
+    
+    
+    def save_label_items(self):
+        json_filename = os.path.join(
+            os.path.dirname(self._image_path), f"{self._image_name}.json"
+        )
+        print(json_filename)
+
+        label_items_data = self.label_items_to_dict()
+        with open(json_filename, "w") as json_file:
+            json.dump(label_items_data, json_file, indent=4)
+        
+        print(f"Label items saved to {json_filename}")
 
     def add_polygon(self, row):
         item = self._label_items[row]
@@ -266,6 +292,7 @@ class MainWindow(QMainWindow):
 
     def menu_option2_selected(self):
         print("Save option selected")
+        self.save_label_items()
 
     def display_image(self):
         if self._image is not None:
