@@ -52,7 +52,7 @@ class MainWindow(QMainWindow):
         right_layout = QVBoxLayout()
 
         # matplotlib canvas
-        self._canvas = FigureCanvas(Figure(figsize=(16, 8)))
+        self._canvas = FigureCanvas(Figure(figsize=(15, 8)))
         self._ax = self._canvas.figure.subplots()
 
         self._canvas.mpl_connect('button_press_event', self.plot_click)
@@ -111,6 +111,7 @@ class MainWindow(QMainWindow):
         print(f"number of items: {len(self._label_items)}")
 
     def add_item(self, selected=False, color="#000", name="", tags="", points=[]):
+        print(f"adding item, {selected=}, {color=}, {name=}, {tags=}, {points=}")
         new_item = LabelItem(selected, color, name, tags, points)
         self._label_items.append(new_item)
         row_position = self.table_widget.rowCount()
@@ -128,16 +129,17 @@ class MainWindow(QMainWindow):
         checkbox_widget.setLayout(checkbox_layout)
         self.table_widget.setCellWidget(row_position, 0, checkbox_widget)
 
-        name_item = QTableWidgetItem(f"Item {row_position + 1}")
+        name_item = QTableWidgetItem(f"{name or f'Item {row_position + 1}'}")
         name_item.setFlags(name_item.flags() | Qt.ItemIsEditable)
         self.table_widget.setItem(row_position, 2, name_item)
 
-        desc_item = QTableWidgetItem(f"Description {row_position + 1}")
+        desc_item = QTableWidgetItem(f"{tags or f'Tags {row_position + 1}'}")
         desc_item.setFlags(desc_item.flags() | Qt.ItemIsEditable)
         self.table_widget.setItem(row_position, 3, desc_item)
 
         color_item = QTableWidgetItem()
         color_item.setFlags(Qt.ItemIsEnabled)
+        color_item.setBackground(QtGui.QColor(color))
         self.table_widget.setItem(row_position, 1, color_item)
         print("new item added")
         print("all items:")
@@ -155,6 +157,7 @@ class MainWindow(QMainWindow):
             self._label_items[row].name = value
         elif field == "tags":
             self._label_items[row].tags = value
+        print("updated:", row, field, value, self._label_items[row])
 
     def label_items_to_dict(self):
         return [
@@ -175,6 +178,7 @@ class MainWindow(QMainWindow):
         print(json_filename)
 
         label_items_data = self.label_items_to_dict()
+        print("\nsaving:", label_items_data)
         with open(json_filename, "w") as json_file:
             json.dump(label_items_data, json_file, indent=4)
         
@@ -189,6 +193,7 @@ class MainWindow(QMainWindow):
             self.table_widget.setRowCount(0)  # Clear the table
             
             for row, item_data in enumerate(label_data):
+                print("item data:", item_data)
                 # Extract item details from JSON data
                 name = item_data.get("name", "")
                 color = item_data.get("color", "#000")
@@ -197,10 +202,11 @@ class MainWindow(QMainWindow):
 
                 # Add each item to the table
                 self.add_item(selected=False, color=color, name=name, tags=tags, points=points)
+                print(f"loading item, {color=}, {name=}, {tags=}, {points=}")
 
-                color_item = QTableWidgetItem()
-                color_item.setBackground(QtGui.QColor(color))
-                self.table_widget.setItem(row, 1, color_item)
+                # color_item = QTableWidgetItem()
+                # color_item.setBackground(QtGui.QColor(color))
+                # self.table_widget.setItem(row, 1, color_item)
             
             print(f"Loaded label items from {json_path}")
 
@@ -228,9 +234,9 @@ class MainWindow(QMainWindow):
         col = item.column()
         print(f"item [{row}, {col}] changed")
 
-        if col == 1:
+        if col == 2:
             self._label_items[row].name = item.text()
-        elif col == 2:
+        elif col == 3:
             self._label_items[row].tags = item.text()
 
     def handle_cell_clicked(self, row, column):
