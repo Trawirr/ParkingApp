@@ -23,6 +23,21 @@ class LabelItem:
         self.tags = tags
         self.points = points
 
+class ClickableCheckboxWidget(QWidget):
+    def __init__(self, checkbox, parent=None):
+        super().__init__(parent)
+        self.checkbox = checkbox
+        layout = QHBoxLayout(self)
+        layout.addWidget(self.checkbox)
+        layout.setAlignment(Qt.AlignCenter)
+        layout.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(layout)
+
+    def mousePressEvent(self, event):
+        # Toggle checkbox state when cell is clicked
+        self.checkbox.setChecked(not self.checkbox.isChecked())
+        super().mousePressEvent(event)
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -60,8 +75,8 @@ class MainWindow(QMainWindow):
         self._canvas.mpl_connect('button_release_event', self.plot_release)
         self._canvas.mpl_connect('scroll_event', self.plot_scroll)
 
-        select_all_button = QPushButton("Select All")
-        select_all_button.clicked.connect(self.select_all_items)
+        self._select_all_button = QPushButton("Select all")
+        self._select_all_button.clicked.connect(self.select_all_items)
 
         self.table_widget = QTableWidget(0, 4)
         self.table_widget.setHorizontalHeaderLabels(["Select", "Color", "Name", "Tags"])
@@ -101,7 +116,7 @@ class MainWindow(QMainWindow):
         file_menu.addAction(option2)
         file_menu.addAction(option3)
 
-        right_layout.addWidget(select_all_button)
+        right_layout.addWidget(self._select_all_button)
         right_layout.addWidget(self.table_widget)
         right_layout.addLayout(button_layout)
 
@@ -121,12 +136,8 @@ class MainWindow(QMainWindow):
         checkbox.setChecked(self._label_items[row_position].selected)
         checkbox.stateChanged.connect(lambda state, row=row_position: self.update_item_state(row, "selected", state == Qt.Checked))
 
-        checkbox_widget = QWidget()
-        checkbox_layout = QHBoxLayout(checkbox_widget)
-        checkbox_layout.addWidget(checkbox)
-        checkbox_layout.setAlignment(Qt.AlignCenter)
-        checkbox_layout.setContentsMargins(0, 0, 0, 0)
-        checkbox_widget.setLayout(checkbox_layout)
+        checkbox_widget = ClickableCheckboxWidget(checkbox)
+        
         self.table_widget.setCellWidget(row_position, 0, checkbox_widget)
 
         name_item = QTableWidgetItem(f"{name or f'Item {row_position + 1}'}")
@@ -153,6 +164,7 @@ class MainWindow(QMainWindow):
                 self.add_polygon(row)
             else:
                 self.remove_polygon(row)
+            self.update_select_all_button()
         elif field == "name":
             self._label_items[row].name = value
         elif field == "tags":
@@ -194,19 +206,13 @@ class MainWindow(QMainWindow):
             
             for row, item_data in enumerate(label_data):
                 print("item data:", item_data)
-                # Extract item details from JSON data
                 name = item_data.get("name", "")
                 color = item_data.get("color", "#000")
                 tags = item_data.get("tags", "")
                 points = item_data.get("points", [])
 
-                # Add each item to the table
                 self.add_item(selected=False, color=color, name=name, tags=tags, points=points)
                 print(f"loading item, {color=}, {name=}, {tags=}, {points=}")
-
-                # color_item = QTableWidgetItem()
-                # color_item.setBackground(QtGui.QColor(color))
-                # self.table_widget.setItem(row, 1, color_item)
             
             print(f"Loaded label items from {json_path}")
 
@@ -225,7 +231,7 @@ class MainWindow(QMainWindow):
     def remove_polygon(self, row):
         if row in self._polygons:
             polygon = self._polygons.pop(row)
-            polygon.remove()  # Remove from axes
+            polygon.remove()
             self._canvas.draw()
             print(f"Polygon removed for row {row}")
 
@@ -244,11 +250,32 @@ class MainWindow(QMainWindow):
         if column == 1:
             self.select_color(row)
 
+            checkbox_widget = self.table_widget.cellWidget(row, 0)
+            checkbox = checkbox_widget.layout().itemAt(0).widget()
+            if checkbox.isChecked():
+                self.remove_polygon(row)
+                self.add_polygon(row)
+
     def select_all_items(self):
+        select_mode = True if self._select_all_button.text() == "Select all" else False
         for row in range(self.table_widget.rowCount()):
             checkbox_widget = self.table_widget.cellWidget(row, 0)
             checkbox = checkbox_widget.layout().itemAt(0).widget()
-            checkbox.setChecked(True)
+            checkbox.setChecked(select_mode)
+        self.update_select_all_button()
+
+    def update_select_all_button(self):
+        all_selected = True
+        for row in range(self.table_widget.rowCount()):
+            checkbox_widget = self.table_widget.cellWidget(row, 0)
+            checkbox = checkbox_widget.layout().itemAt(0).widget()
+            if not checkbox.isChecked():
+                all_selected = False
+                break
+        if all_selected:
+            self._select_all_button.setText("Unselect all")
+        else:
+            self._select_all_button.setText("Select all")
 
     def plot_click(self, event):
         x, y = event.xdata, event.ydata
@@ -273,7 +300,7 @@ class MainWindow(QMainWindow):
 
             # RMB - end of sequence
             elif event.button == 3:
-                self.add_item(points=self._points)
+                self.add_item(selected=True, points=self._points)
                 self._points = []
                 self.display_image()
 
@@ -344,6 +371,13 @@ class MainWindow(QMainWindow):
             self._center = [self._image.shape[0] // 2, self._image.shape[1] // 2]
             self._zoom = 1
             self.press_pos = None
+        
+        self._polygons = {}
+        for row in range(self.table_widget.rowCount()):
+            checkbox_widget = self.table_widget.cellWidget(row, 0)
+            checkbox = checkbox_widget.layout().itemAt(0).widget()
+            if checkbox.isChecked():
+                self.add_polygon(row)
 
     def update_image(self):
         print(f"Updating plot image...")
