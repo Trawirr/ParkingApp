@@ -86,15 +86,13 @@ class MainWindow(QMainWindow):
         self.table_widget.setColumnWidth(0, 50)
         self.table_widget.setColumnWidth(1, 50)
         self.table_widget.setColumnWidth(2, 150)
-        self.table_widget.setColumnWidth(3, 300)
+        self.table_widget.setColumnWidth(3, 500)
 
         self.table_widget.setHorizontalScrollMode(QAbstractItemView.ScrollPerPixel)
         self.table_widget.itemChanged.connect(self.handle_item_changed)
         self.table_widget.cellClicked.connect(self.handle_cell_clicked)
 
-        # initial example items
-        # for i in range(10):
-        #     self.add_item()
+        self.table_widget.setSelectionMode(QAbstractItemView.NoSelection)
 
         button_1 = QPushButton("Button 1")
         button_1.clicked.connect(self.button_1_clicked)
