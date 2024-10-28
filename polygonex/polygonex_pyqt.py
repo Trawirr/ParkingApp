@@ -233,6 +233,12 @@ class MainWindow(QMainWindow):
             self._canvas.draw()
             print(f"Polygon removed for row {row}")
 
+    def remove_all_polygons(self):
+        rows = list(self._polygons.keys())
+        for row in rows:
+            self.remove_polygon(row)
+        print("Removed all polygons")
+
     def handle_item_changed(self, item):
         row = item.row()
         col = item.column()
@@ -355,6 +361,7 @@ class MainWindow(QMainWindow):
         json_path = QFileDialog.getOpenFileName(self, 'Load Label Items', '', "JSON files (*.json)")[0]
         if json_path:
             self.load_label_items(json_path)
+            self.remove_all_polygons()
 
     def menu_option_save(self):
         print("Save option selected")
@@ -370,6 +377,7 @@ class MainWindow(QMainWindow):
             self._zoom = 1
             self.press_pos = None
         
+        self.remove_all_polygons()
         self._polygons = {}
         for row in range(self.table_widget.rowCount()):
             checkbox_widget = self.table_widget.cellWidget(row, 0)
