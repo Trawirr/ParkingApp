@@ -23,6 +23,10 @@ class LabelItem:
         self.tags = tags
         self.points = points
 
+    @property
+    def points_number(self):
+        return len(self.points)
+
 class ClickableCheckboxWidget(QWidget):
     def __init__(self, checkbox, parent=None):
         super().__init__(parent)
@@ -154,6 +158,7 @@ class MainWindow(QMainWindow):
         print("all items:")
         for i, item in enumerate(self._label_items):
             print(i, item)
+        self.update_select_all_button()
 
     def update_item_state(self, row, field, value):
         if field == "selected":
@@ -219,12 +224,18 @@ class MainWindow(QMainWindow):
 
     def add_polygon(self, row):
         item = self._label_items[row]
-        if item.points:
+        if item.points_number > 1:
             polygon = plt.Polygon(item.points, closed=True, color=item.color, alpha=0.5)
             self._ax.add_patch(polygon)
             self._polygons[row] = polygon
             self._canvas.draw()
             print(f"Polygon added for row {row}")
+        if item.points_number == 1:
+            point = plt.Circle((item.points[0][0], item.points[0][1]), radius=5, color=item.color, alpha=0.75)
+            self._ax.add_patch(point)
+            self._polygons[row] = point
+            self._canvas.draw()
+            print(f"Point added for row {row}")
 
     def remove_polygon(self, row):
         if row in self._polygons:
