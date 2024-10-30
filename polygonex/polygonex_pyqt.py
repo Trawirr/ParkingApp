@@ -97,6 +97,7 @@ class MainWindow(QMainWindow):
         self.table_widget.cellClicked.connect(self.handle_cell_clicked)
 
         self.table_widget.setSelectionMode(QAbstractItemView.NoSelection)
+        self.table_widget.setFocusPolicy(Qt.NoFocus)
 
         button_1 = QPushButton("Button 1")
         button_1.clicked.connect(self.button_1_clicked)
