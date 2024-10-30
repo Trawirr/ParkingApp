@@ -2,7 +2,7 @@ import sys
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QTableWidget,
     QTableWidgetItem, QPushButton, QMenuBar, QAction, QScrollArea, QCheckBox, QLineEdit,
-    QFileDialog, QAbstractItemView, QColorDialog
+    QFileDialog, QAbstractItemView, QColorDialog, QMessageBox, 
 )
 from PyQt5.QtCore import Qt, QStringListModel
 from PyQt5 import QtGui
@@ -82,8 +82,8 @@ class MainWindow(QMainWindow):
         self._select_all_button = QPushButton("Select all")
         self._select_all_button.clicked.connect(self.select_all_items)
 
-        self.table_widget = QTableWidget(0, 4)
-        self.table_widget.setHorizontalHeaderLabels(["Select", "Color", "Name", "Tags"])
+        self.table_widget = QTableWidget(0, 5)
+        self.table_widget.setHorizontalHeaderLabels(["Select", "Color", "Name", "Tags", ""])
         self.table_widget.horizontalHeader().setDefaultAlignment(Qt.AlignLeft)
         self.table_widget.verticalHeader().setVisible(False)
         self.table_widget.setShowGrid(True)
@@ -155,11 +155,39 @@ class MainWindow(QMainWindow):
         color_item.setFlags(Qt.ItemIsEnabled)
         color_item.setBackground(QtGui.QColor(color))
         self.table_widget.setItem(row_position, 1, color_item)
+
+        delete_button = QPushButton("Delete")
+        delete_button.clicked.connect(lambda _, row=row_position: self.confirm_delete_item(row))
+        self.table_widget.setCellWidget(row_position, 4, delete_button)
+
         print("new item added")
-        print("all items:")
-        for i, item in enumerate(self._label_items):
-            print(i, item)
         self.update_select_all_button()
+
+    def confirm_delete_item(self, row):
+        reply = QMessageBox.question(
+            self,
+            "Confirm Deletion",
+            "Are you sure you want to delete this item?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No
+        )
+        
+        if reply == QMessageBox.Yes:
+            self.delete_item(row)
+
+    def delete_item(self, row):
+        if row < len(self._label_items):
+            self._label_items.pop(row)
+        self.table_widget.removeRow(row)
+        print(f"Item at row {row} deleted")
+        
+        # fix delete buttons' connections
+        for i in range(row, self.table_widget.rowCount()):
+            delete_button = self.table_widget.cellWidget(i, 4)
+            print(f"delete item, {i=}, {self.table_widget.cellWidget(i, 4)=}")
+            if delete_button is not None:
+                delete_button.clicked.disconnect() 
+                delete_button.clicked.connect(lambda _, row=i: self.confirm_delete_item(row))
 
     def update_item_state(self, row, field, value):
         if field == "selected":
