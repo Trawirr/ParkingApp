@@ -16,7 +16,8 @@ import time
 import os
 
 class LabelItem:
-    def __init__(self, selected=False, color="#000", name="", tags="", points=[]):
+    def __init__(self, id=0, selected=False, color="#000", name="", tags="", points=[]):
+        self.id = id
         self.selected = selected
         self.color = color
         self.name = name
@@ -49,6 +50,7 @@ class MainWindow(QMainWindow):
         # table items
         self._label_items = []
         self._polygons = {}
+        self._item_counter = 0
 
         # image parameters
         self._zoom = None
@@ -129,8 +131,9 @@ class MainWindow(QMainWindow):
         print(f"number of items: {len(self._label_items)}")
 
     def add_item(self, selected=False, color="#000", name="", tags="", points=[]):
-        print(f"adding item, {selected=}, {color=}, {name=}, {tags=}, {points=}")
-        new_item = LabelItem(selected, color, name, tags, points)
+        self._item_counter += 1
+        print(f"adding item, id={self._item_counter} {selected=}, {color=}, {name=}, {tags=}, {points=}")
+        new_item = LabelItem(self._item_counter, selected, color, name, tags, points)
         self._label_items.append(new_item)
         row_position = self.table_widget.rowCount()
         self.table_widget.insertRow(row_position)
@@ -143,11 +146,11 @@ class MainWindow(QMainWindow):
         
         self.table_widget.setCellWidget(row_position, 0, checkbox_widget)
 
-        name_item = QTableWidgetItem(f"{name or f'Item {row_position + 1}'}")
+        name_item = QTableWidgetItem(f"{name or f'Item {self._item_counter}'}")
         name_item.setFlags(name_item.flags() | Qt.ItemIsEditable)
         self.table_widget.setItem(row_position, 2, name_item)
 
-        desc_item = QTableWidgetItem(f"{tags or f'Tags {row_position + 1}'}")
+        desc_item = QTableWidgetItem(f"{tags or f'Tags {self._item_counter}'}")
         desc_item.setFlags(desc_item.flags() | Qt.ItemIsEditable)
         self.table_widget.setItem(row_position, 3, desc_item)
 
@@ -177,6 +180,7 @@ class MainWindow(QMainWindow):
 
     def delete_item(self, row):
         if row < len(self._label_items):
+            self.remove_polygon(row)
             self._label_items.pop(row)
         self.table_widget.removeRow(row)
         print(f"Item at row {row} deleted")
@@ -184,10 +188,16 @@ class MainWindow(QMainWindow):
         # fix delete buttons' connections
         for i in range(row, self.table_widget.rowCount()):
             delete_button = self.table_widget.cellWidget(i, 4)
-            print(f"delete item, {i=}, {self.table_widget.cellWidget(i, 4)=}")
             if delete_button is not None:
                 delete_button.clicked.disconnect() 
                 delete_button.clicked.connect(lambda _, row=i: self.confirm_delete_item(row))
+
+        # fix checkboxes' connections
+        for i in range(row, self.table_widget.rowCount()):
+            checkbox = self.table_widget.cellWidget(i, 0).layout().itemAt(0).widget()
+            if checkbox is not None:
+                checkbox.stateChanged.disconnect() 
+                checkbox.stateChanged.connect(lambda state, row=i: self.update_item_state(row, "selected", state == Qt.Checked))
 
     def update_item_state(self, row, field, value):
         if field == "selected":
@@ -256,19 +266,20 @@ class MainWindow(QMainWindow):
         if item.points_number > 1:
             polygon = plt.Polygon(item.points, closed=True, color=item.color, alpha=0.5)
             self._ax.add_patch(polygon)
-            self._polygons[row] = polygon
+            self._polygons[item.id] = polygon
             self._canvas.draw()
             print(f"Polygon added for row {row}")
         if item.points_number == 1:
             point = plt.Circle((item.points[0][0], item.points[0][1]), radius=5, color=item.color, alpha=0.75)
             self._ax.add_patch(point)
-            self._polygons[row] = point
+            self._polygons[item.id] = point
             self._canvas.draw()
             print(f"Point added for row {row}")
 
     def remove_polygon(self, row):
-        if row in self._polygons:
-            polygon = self._polygons.pop(row)
+        item = self._label_items[row]
+        if item.id in self._polygons:
+            polygon = self._polygons.pop(item.id)
             polygon.remove()
             self._canvas.draw()
             print(f"Polygon removed for row {row}")
