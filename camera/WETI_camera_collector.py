@@ -11,9 +11,10 @@ def parse_args():
     parser.add_argument("-s", "--sleep", type=int, help="time (in seconds) to sleep between capturing", default=60)
     parser.add_argument("-l", "--length", type=int, help="video length (in seconds)", default=10)
     parser.add_argument("-p", "--path", type=str, help="path to output directory", default='')
+    parser.add_argument("-c", "--camera", type=str, help="camera name", default='')
     return parser.parse_args()
 
-def collect_images(rtsp_url: str, sleep: int, output_dir: str):
+def collect_images(rtsp_url: str, sleep: int, output_dir: str, camera_name: str):
     vlc_instance = vlc.Instance('--no-xlib')
     player = vlc_instance.media_player_new()
     media = vlc_instance.media_new(rtsp_url)
@@ -23,7 +24,7 @@ def collect_images(rtsp_url: str, sleep: int, output_dir: str):
 
     try:
         while True:
-            filename = os.path.join(output_dir, f"{time.strftime('%Y_%m_%d_%H_%M')}.jpg")
+            filename = os.path.join(output_dir, f"{camera_name}_{time.strftime('%Y_%m_%d_%H_%M')}.jpg")
             frame = player.video_take_snapshot(0, filename, 1920, 1080)
             print(f"{frame=}")
             if frame >= 0:
@@ -43,7 +44,7 @@ def collect_images(rtsp_url: str, sleep: int, output_dir: str):
         media.release()
         print("Exiting...")
 
-def collect_videos(rtsp_url: str, sleep: int, length: int, output_dir: str):
+def collect_videos(rtsp_url: str, sleep: int, length: int, output_dir: str, camera_name: str):
     vlc_instance = vlc.Instance('--no-xlib')
     player = vlc_instance.media_player_new()
     media = vlc_instance.media_new(rtsp_url)
@@ -51,7 +52,7 @@ def collect_videos(rtsp_url: str, sleep: int, length: int, output_dir: str):
     try:
         while True:
             vid_len = 0
-            filename = os.path.join(output_dir, f"{time.strftime('%Y_%m_%d_%H_%M')}.mpg")
+            filename = os.path.join(output_dir, f"{camera_name}_{time.strftime('%Y_%m_%d_%H_%M')}.mpg")
             media.add_option(f"sout=file/ts:{filename}")
             player = vlc_instance.media_player_new()
             player.set_media(media)
@@ -81,9 +82,9 @@ def load_url(path: str):
     return url
 
 if __name__ == "__main__":
-    url = load_url(r"C:\Users\gtraw\OneDrive\Pulpit\UM sem. 2\ProjektBadawczy\apps\camera\pass\weti2.txt")
     args = parse_args()
+    url = load_url(fr"C:\Users\gtraw\OneDrive\Pulpit\UM sem. 2\ProjektBadawczy\apps\camera\pass\{args.camera}.txt")
     if args.image:
-        collect_images(url, args.sleep, args.path)
+        collect_images(url, args.sleep, args.path, args.camera)
     elif args.video:
-        collect_videos(url, args.sleep, args.length, args.path)
+        collect_videos(url, args.sleep, args.length, args.path, args.camera)
