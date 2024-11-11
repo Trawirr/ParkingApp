@@ -86,14 +86,15 @@ class MainWindow(QMainWindow):
         self._select_all_button.clicked.connect(self.select_all_items)
 
         self.table_widget = QTableWidget(0, 5)
-        self.table_widget.setHorizontalHeaderLabels(["Select", "Color", "Name", "Tags", ""])
+        self.table_widget.setHorizontalHeaderLabels(["Del", "Select", "Color", "Name", "Tags"])
         self.table_widget.horizontalHeader().setDefaultAlignment(Qt.AlignLeft)
         self.table_widget.verticalHeader().setVisible(False)
         self.table_widget.setShowGrid(True)
         self.table_widget.setColumnWidth(0, 50)
         self.table_widget.setColumnWidth(1, 50)
-        self.table_widget.setColumnWidth(2, 100)
-        self.table_widget.setColumnWidth(3, 200)
+        self.table_widget.setColumnWidth(2, 50)
+        self.table_widget.setColumnWidth(3, 100)
+        self.table_widget.setColumnWidth(4, 200)
 
         self.table_widget.setHorizontalScrollMode(QAbstractItemView.ScrollPerPixel)
         self.table_widget.itemChanged.connect(self.handle_item_changed)
@@ -181,24 +182,24 @@ class MainWindow(QMainWindow):
 
         checkbox_widget = ClickableCheckboxWidget(checkbox)
         
-        self.table_widget.setCellWidget(row_position, 0, checkbox_widget)
+        self.table_widget.setCellWidget(row_position, 1, checkbox_widget)
 
         name_item = QTableWidgetItem(f"{name or f'Item {self._item_counter}'}")
         name_item.setFlags(name_item.flags() | Qt.ItemIsEditable)
-        self.table_widget.setItem(row_position, 2, name_item)
+        self.table_widget.setItem(row_position, 3, name_item)
 
         desc_item = QTableWidgetItem(f"{tags or f'Tags {self._item_counter}'}")
         desc_item.setFlags(desc_item.flags() | Qt.ItemIsEditable)
-        self.table_widget.setItem(row_position, 3, desc_item)
+        self.table_widget.setItem(row_position, 4, desc_item)
 
         color_item = QTableWidgetItem()
         color_item.setFlags(Qt.ItemIsEnabled)
         color_item.setBackground(QtGui.QColor(color))
-        self.table_widget.setItem(row_position, 1, color_item)
+        self.table_widget.setItem(row_position, 2, color_item)
 
-        delete_button = QPushButton("Delete")
+        delete_button = QPushButton("X")
         delete_button.clicked.connect(lambda _, row=row_position: self.confirm_delete_item(row))
-        self.table_widget.setCellWidget(row_position, 4, delete_button)
+        self.table_widget.setCellWidget(row_position, 0, delete_button)
 
         print("new item added")
         self.update_select_all_button()
@@ -231,7 +232,7 @@ class MainWindow(QMainWindow):
 
         # fix checkboxes' connections
         for i in range(row, self.table_widget.rowCount()):
-            checkbox = self.table_widget.cellWidget(i, 0).layout().itemAt(0).widget()
+            checkbox = self.table_widget.cellWidget(i, 1).layout().itemAt(0).widget()
             if checkbox is not None:
                 checkbox.stateChanged.disconnect() 
                 checkbox.stateChanged.connect(lambda state, row=i: self.update_item_state(row, "selected", state == Qt.Checked))
@@ -380,7 +381,7 @@ class MainWindow(QMainWindow):
         if column == 1:
             self.select_color(row)
 
-            checkbox_widget = self.table_widget.cellWidget(row, 0)
+            checkbox_widget = self.table_widget.cellWidget(row, 1)
             checkbox = checkbox_widget.layout().itemAt(0).widget()
             if checkbox.isChecked():
                 self.remove_polygon(row)
@@ -389,7 +390,7 @@ class MainWindow(QMainWindow):
     def select_all_items(self):
         select_mode = True if self._select_all_button.text() == "Select all" else False
         for row in range(self.table_widget.rowCount()):
-            checkbox_widget = self.table_widget.cellWidget(row, 0)
+            checkbox_widget = self.table_widget.cellWidget(row, 1)
             checkbox = checkbox_widget.layout().itemAt(0).widget()
             checkbox.setChecked(select_mode)
         self.update_select_all_button()
@@ -397,7 +398,7 @@ class MainWindow(QMainWindow):
     def update_select_all_button(self):
         all_selected = True
         for row in range(self.table_widget.rowCount()):
-            checkbox_widget = self.table_widget.cellWidget(row, 0)
+            checkbox_widget = self.table_widget.cellWidget(row, 1)
             checkbox = checkbox_widget.layout().itemAt(0).widget()
             if not checkbox.isChecked():
                 all_selected = False
@@ -506,8 +507,8 @@ class MainWindow(QMainWindow):
         self.remove_all_polygons()
         self._polygons = {}
         for row in range(self.table_widget.rowCount()):
-            checkbox_widget = self.table_widget.cellWidget(row, 0)
-            checkbox = checkbox_widget.layout().itemAt(0).widget()
+            checkbox_widget = self.table_widget.cellWidget(row, 1)
+            checkbox = checkbox_widget.layout().itemAt(1).widget()
             if checkbox.isChecked():
                 self.add_polygon(row)
 
