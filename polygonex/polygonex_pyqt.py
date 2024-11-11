@@ -71,7 +71,7 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(main_widget)
 
         main_layout = QHBoxLayout(main_widget)
-        right_layout = QVBoxLayout()
+        left_layout = QVBoxLayout()
 
         # matplotlib canvas
         self._canvas = FigureCanvas(Figure(figsize=(15, 8)))
@@ -102,13 +102,14 @@ class MainWindow(QMainWindow):
         self.table_widget.setSelectionMode(QAbstractItemView.NoSelection)
         self.table_widget.setFocusPolicy(Qt.NoFocus)
 
-        button_1 = QPushButton("Button 1")
-        button_1.clicked.connect(self.button_1_clicked)
-        button_2 = QPushButton("Button 2")
-        button_2.clicked.connect(self.button_2_clicked)
-        button_layout = QHBoxLayout()
-        button_layout.addWidget(button_1)
-        button_layout.addWidget(button_2)
+        # buttons above the table
+        # button_1 = QPushButton("Button 1")
+        # button_1.clicked.connect(self.button_1_clicked)
+        # button_2 = QPushButton("Button 2")
+        # button_2.clicked.connect(self.button_2_clicked)
+        # button_layout = QHBoxLayout()
+        # button_layout.addWidget(button_1)
+        # button_layout.addWidget(button_2)
 
         menu_bar = self.menuBar()
         file_menu = menu_bar.addMenu("Menu")
@@ -132,6 +133,8 @@ class MainWindow(QMainWindow):
         for i, l in enumerate(["none", "day", "evening", "night"]):
             new_radio_button = QRadioButton(l)
             self.time_buttons.addButton(new_radio_button, id=i + 1)
+            if i == 0:
+                new_radio_button.setChecked(True)
             self.weather_layout.addWidget(new_radio_button, i + 1, 0)
 
         precipitation_label = QLabel("Precipitation")
@@ -140,6 +143,8 @@ class MainWindow(QMainWindow):
         for i, l in enumerate(["none", "rain", "snow", "fog"]):
             new_radio_button = QRadioButton(l)
             self.precipitation_buttons.addButton(new_radio_button, id=i + 1)
+            if i == 0:
+                new_radio_button.setChecked(True)
             self.weather_layout.addWidget(new_radio_button, i + 1, 1)
     
         weather_label = QLabel("Weather")
@@ -148,24 +153,19 @@ class MainWindow(QMainWindow):
         for i, l in enumerate(["none", "sunny", "cloudy"]):
             new_radio_button = QRadioButton(l)
             self.weather_buttons.addButton(new_radio_button, id=i + 1)
+            if i == 0:
+                new_radio_button.setChecked(True)
             self.weather_layout.addWidget(new_radio_button, i + 1, 2)
 
         self.weather_groupbox.setLayout(self.weather_layout)
-        right_layout.addWidget(self.weather_groupbox)
+        left_layout.addWidget(self.weather_groupbox)
 
-        right_layout.addWidget(self._select_all_button)
-        right_layout.addWidget(self.table_widget)
-        right_layout.addLayout(button_layout)
+        left_layout.addWidget(self._select_all_button)
+        left_layout.addWidget(self.table_widget)
+        # left_layout.addLayout(button_layout)
 
+        main_layout.addLayout(left_layout)
         main_layout.addWidget(self._canvas)
-        main_layout.addLayout(right_layout)
-
-        right_layout.addWidget(self._select_all_button)
-        right_layout.addWidget(self.table_widget)
-        right_layout.addLayout(button_layout)
-
-        main_layout.addWidget(self._canvas)
-        main_layout.addLayout(right_layout)
 
     def add_item(self, selected=False, color="#000", name="", tags="", points=[]):
         self._item_counter += 1
