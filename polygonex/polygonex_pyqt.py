@@ -129,7 +129,7 @@ class MainWindow(QMainWindow):
         time_label = QLabel("Time")
         self.weather_layout.addWidget(time_label, 0, 0)
         self.time_buttons = QButtonGroup(self)
-        for i, l in enumerate(["day", "evening", "night"]):
+        for i, l in enumerate(["none", "day", "evening", "night"]):
             new_radio_button = QRadioButton(l)
             self.time_buttons.addButton(new_radio_button, id=i + 1)
             self.weather_layout.addWidget(new_radio_button, i + 1, 0)
@@ -137,7 +137,7 @@ class MainWindow(QMainWindow):
         precipitation_label = QLabel("Precipitation")
         self.weather_layout.addWidget(precipitation_label, 0, 2)
         self.precipitation_buttons = QButtonGroup(self)
-        for i, l in enumerate(["rain", "snow", "fog"]):
+        for i, l in enumerate(["none", "rain", "snow", "fog"]):
             new_radio_button = QRadioButton(l)
             self.precipitation_buttons.addButton(new_radio_button, id=i + 1)
             self.weather_layout.addWidget(new_radio_button, i + 1, 1)
@@ -145,12 +145,11 @@ class MainWindow(QMainWindow):
         weather_label = QLabel("Weather")
         self.weather_layout.addWidget(weather_label, 0, 1)
         self.weather_buttons = QButtonGroup(self)
-        for i, l in enumerate(["sunny", "cloudy"]):
+        for i, l in enumerate(["none", "sunny", "cloudy"]):
             new_radio_button = QRadioButton(l)
             self.weather_buttons.addButton(new_radio_button, id=i + 1)
             self.weather_layout.addWidget(new_radio_button, i + 1, 2)
 
-        # Assign the layout to the groupbox and add it to the main layout
         self.weather_groupbox.setLayout(self.weather_layout)
         right_layout.addWidget(self.weather_groupbox)
 
@@ -282,7 +281,8 @@ class MainWindow(QMainWindow):
 
         data_json = {}
         data_json['objects'] = self.label_items_to_dict()
-        data_json['weather'] = weather_info
+        data_json['weather'] = [w for w in weather_info if w != "none"]
+        print(f"saved weather info: {data_json['weather']}")
         with open(json_filename, "w") as json_file:
             json.dump(data_json, json_file, indent=4)
         
@@ -312,17 +312,19 @@ class MainWindow(QMainWindow):
             # load weather conditions
             weather_data = json_data['weather']
             weather_options = [
-                ["day", "evening", "night"],
-                ["rain", "snow", "fog"],
-                ["sunny", "cloudy"]
+                ["none", "day", "evening", "night"],
+                ["none", "rain", "snow", "fog"],
+                ["none", "sunny", "cloudy"]
             ]
+            for g in range(3):
+                self.weather_layout.itemAtPosition(1, g).widget().setChecked(True)
             for w_d in weather_data:
                 for i, weather_group in enumerate(weather_options):
                     try:
                         button_id = weather_group.index(w_d)
                         self.weather_layout.itemAtPosition(button_id + 1, i).widget().setChecked(True)
                     except Exception as e:
-                        print(f"exception: {e=}, {w_d=}, {weather_group}, {i=}")
+                        pass
             
             print(f"Loaded label items from {json_path}")
 
