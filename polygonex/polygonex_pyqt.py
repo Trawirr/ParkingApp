@@ -2,7 +2,8 @@ import sys
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QTableWidget,
     QTableWidgetItem, QPushButton, QMenuBar, QAction, QScrollArea, QCheckBox, QLineEdit,
-    QFileDialog, QAbstractItemView, QColorDialog, QMessageBox, 
+    QFileDialog, QAbstractItemView, QColorDialog, QMessageBox, QGroupBox,
+    QRadioButton
 )
 from PyQt5.QtCore import Qt, QStringListModel
 from PyQt5 import QtGui
@@ -120,6 +121,10 @@ class MainWindow(QMainWindow):
         file_menu.addAction(option1)
         file_menu.addAction(option2)
         file_menu.addAction(option3)
+        
+        # radio buttons
+        radio_buttons_layout = self.create_radio_buttons()
+        right_layout.addLayout(radio_buttons_layout)
 
         right_layout.addWidget(self._select_all_button)
         right_layout.addWidget(self.table_widget)
@@ -128,7 +133,55 @@ class MainWindow(QMainWindow):
         main_layout.addWidget(self._canvas)
         main_layout.addLayout(right_layout)
 
-        print(f"number of items: {len(self._label_items)}")
+        right_layout.addWidget(self._select_all_button)
+        right_layout.addWidget(self.table_widget)
+        right_layout.addLayout(button_layout)
+
+        main_layout.addWidget(self._canvas)
+        main_layout.addLayout(right_layout)
+
+    def create_radio_buttons(self):
+        layout = QVBoxLayout()
+
+        # Group 1: Time of Day
+        time_group = QGroupBox("Time of Day")
+        time_layout = QVBoxLayout()
+        day_radio = QRadioButton("Day")
+        evening_radio = QRadioButton("Evening")
+        night_radio = QRadioButton("Night")
+        time_layout.addWidget(day_radio)
+        time_layout.addWidget(evening_radio)
+        time_layout.addWidget(night_radio)
+        time_group.setLayout(time_layout)
+
+        # Group 2: Weather Condition
+        weather_group = QGroupBox("Weather")
+        weather_layout = QVBoxLayout()
+        sunny_radio = QRadioButton("Sunny")
+        cloudy_radio = QRadioButton("Cloudy")
+        weather_layout.addWidget(sunny_radio)
+        weather_layout.addWidget(cloudy_radio)
+        weather_group.setLayout(weather_layout)
+
+        # Group 3: Precipitation
+        precipitation_group = QGroupBox("Precipitation")
+        precipitation_layout = QVBoxLayout()
+        rain_radio = QRadioButton("Rain")
+        snow_radio = QRadioButton("Snow")
+        fog_radio = QRadioButton("Fog")
+        none_radio = QRadioButton("None")
+        precipitation_layout.addWidget(rain_radio)
+        precipitation_layout.addWidget(snow_radio)
+        precipitation_layout.addWidget(fog_radio)
+        precipitation_layout.addWidget(none_radio)
+        precipitation_group.setLayout(precipitation_layout)
+
+        # Add groups to the main layout
+        layout.addWidget(time_group)
+        layout.addWidget(weather_group)
+        layout.addWidget(precipitation_group)
+
+        return layout
 
     def add_item(self, selected=False, color="#000", name="", tags="", points=[]):
         self._item_counter += 1
@@ -199,6 +252,7 @@ class MainWindow(QMainWindow):
                 checkbox.stateChanged.disconnect() 
                 checkbox.stateChanged.connect(lambda state, row=i: self.update_item_state(row, "selected", state == Qt.Checked))
 
+    # update one of item's fields
     def update_item_state(self, row, field, value):
         if field == "selected":
             self._label_items[row].selected = value
@@ -213,6 +267,7 @@ class MainWindow(QMainWindow):
             self._label_items[row].tags = value
         print("updated:", row, field, value, self._label_items[row])
 
+    # convert all label items to dict
     def label_items_to_dict(self):
         return [
             {
@@ -224,7 +279,7 @@ class MainWindow(QMainWindow):
             for item in self._label_items
         ]
     
-    
+    # save label items to json file with the same path as image file
     def save_label_items(self):
         json_filename = os.path.join(
             os.path.dirname(self._image_path), f"{self._image_name}.json"
@@ -238,13 +293,14 @@ class MainWindow(QMainWindow):
         
         print(f"Label items saved to {json_filename}")
 
+    # clear table, label items list and load label items from json file
     def load_label_items(self, json_path):
         try:
             with open(json_path, "r") as json_file:
                 label_data = json.load(json_file)
             
             self._label_items.clear()
-            self.table_widget.setRowCount(0)  # Clear the table
+            self.table_widget.setRowCount(0)
             
             for row, item_data in enumerate(label_data):
                 print("item data:", item_data)
@@ -261,6 +317,7 @@ class MainWindow(QMainWindow):
         except Exception as e:
             print(f"Failed to load label items: {e}")
 
+    # draw and save polygon for given label item
     def add_polygon(self, row):
         item = self._label_items[row]
         if item.points_number > 1:
@@ -276,6 +333,7 @@ class MainWindow(QMainWindow):
             self._canvas.draw()
             print(f"Point added for row {row}")
 
+    # remove polygon for given label item
     def remove_polygon(self, row):
         item = self._label_items[row]
         if item.id in self._polygons:
@@ -284,12 +342,14 @@ class MainWindow(QMainWindow):
             self._canvas.draw()
             print(f"Polygon removed for row {row}")
 
+    # remove polygons for all label items
     def remove_all_polygons(self):
         rows = list(self._polygons.keys())
         for row in rows:
             self.remove_polygon(row)
         print("Removed all polygons")
 
+    # update label item's text fields
     def handle_item_changed(self, item):
         row = item.row()
         col = item.column()
@@ -300,6 +360,7 @@ class MainWindow(QMainWindow):
         elif col == 3:
             self._label_items[row].tags = item.text()
 
+    # handle click on checkbox cell
     def handle_cell_clicked(self, row, column):
         print(f"cell in row {row} clicked")
         if column == 1:
