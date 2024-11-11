@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QTableWidget,
     QTableWidgetItem, QPushButton, QMenuBar, QAction, QScrollArea, QCheckBox, QLineEdit,
     QFileDialog, QAbstractItemView, QColorDialog, QMessageBox, QGroupBox,
-    QRadioButton
+    QRadioButton, QButtonGroup, QLabel, QGridLayout
 )
 from PyQt5.QtCore import Qt, QStringListModel
 from PyQt5 import QtGui
@@ -92,8 +92,8 @@ class MainWindow(QMainWindow):
         self.table_widget.setShowGrid(True)
         self.table_widget.setColumnWidth(0, 50)
         self.table_widget.setColumnWidth(1, 50)
-        self.table_widget.setColumnWidth(2, 150)
-        self.table_widget.setColumnWidth(3, 500)
+        self.table_widget.setColumnWidth(2, 100)
+        self.table_widget.setColumnWidth(3, 200)
 
         self.table_widget.setHorizontalScrollMode(QAbstractItemView.ScrollPerPixel)
         self.table_widget.itemChanged.connect(self.handle_item_changed)
@@ -123,8 +123,38 @@ class MainWindow(QMainWindow):
         file_menu.addAction(option3)
         
         # radio buttons
-        radio_buttons_layout = self.create_radio_buttons()
-        right_layout.addLayout(radio_buttons_layout)
+        self.weather_groupbox = QGroupBox("Weather Conditions")
+        weather_layout = QGridLayout()
+
+        time_label = QLabel("Time")
+        weather_layout.addWidget(time_label, 0, 0)
+        self.time_buttons = QButtonGroup(self)
+        for i, l in enumerate(["day", "evening", "night"]):
+            new_radio_button = QRadioButton(l)
+            self.time_buttons.addButton(new_radio_button, id=i + 1)
+            weather_layout.addWidget(new_radio_button, i + 1, 0)
+
+        # Column 3: Precipitation
+        precipitation_label = QLabel("Precipitation")
+        weather_layout.addWidget(precipitation_label, 0, 2)
+        self.precipitation_buttons = QButtonGroup(self)
+        for i, l in enumerate(["rain", "snow", "fog"]):
+            new_radio_button = QRadioButton(l)
+            self.precipitation_buttons.addButton(new_radio_button, id=i + 1)
+            weather_layout.addWidget(new_radio_button, i + 1, 1)
+    
+        # Column 2: Sky Condition
+        weather_label = QLabel("Weather")
+        weather_layout.addWidget(weather_label, 0, 1)
+        self.weather_buttons = QButtonGroup(self)
+        for i, l in enumerate(["sunny", "cloudy"]):
+            new_radio_button = QRadioButton(l)
+            self.weather_buttons.addButton(new_radio_button, id=i + 1)
+            weather_layout.addWidget(new_radio_button, i + 1, 2)
+
+        # Assign the layout to the groupbox and add it to the main layout
+        self.weather_groupbox.setLayout(weather_layout)
+        right_layout.addWidget(self.weather_groupbox)
 
         right_layout.addWidget(self._select_all_button)
         right_layout.addWidget(self.table_widget)
@@ -139,49 +169,6 @@ class MainWindow(QMainWindow):
 
         main_layout.addWidget(self._canvas)
         main_layout.addLayout(right_layout)
-
-    def create_radio_buttons(self):
-        layout = QVBoxLayout()
-
-        # Group 1: Time of Day
-        time_group = QGroupBox("Time of Day")
-        time_layout = QVBoxLayout()
-        day_radio = QRadioButton("Day")
-        evening_radio = QRadioButton("Evening")
-        night_radio = QRadioButton("Night")
-        time_layout.addWidget(day_radio)
-        time_layout.addWidget(evening_radio)
-        time_layout.addWidget(night_radio)
-        time_group.setLayout(time_layout)
-
-        # Group 2: Weather Condition
-        weather_group = QGroupBox("Weather")
-        weather_layout = QVBoxLayout()
-        sunny_radio = QRadioButton("Sunny")
-        cloudy_radio = QRadioButton("Cloudy")
-        weather_layout.addWidget(sunny_radio)
-        weather_layout.addWidget(cloudy_radio)
-        weather_group.setLayout(weather_layout)
-
-        # Group 3: Precipitation
-        precipitation_group = QGroupBox("Precipitation")
-        precipitation_layout = QVBoxLayout()
-        rain_radio = QRadioButton("Rain")
-        snow_radio = QRadioButton("Snow")
-        fog_radio = QRadioButton("Fog")
-        none_radio = QRadioButton("None")
-        precipitation_layout.addWidget(rain_radio)
-        precipitation_layout.addWidget(snow_radio)
-        precipitation_layout.addWidget(fog_radio)
-        precipitation_layout.addWidget(none_radio)
-        precipitation_group.setLayout(precipitation_layout)
-
-        # Add groups to the main layout
-        layout.addWidget(time_group)
-        layout.addWidget(weather_group)
-        layout.addWidget(precipitation_group)
-
-        return layout
 
     def add_item(self, selected=False, color="#000", name="", tags="", points=[]):
         self._item_counter += 1
@@ -281,15 +268,25 @@ class MainWindow(QMainWindow):
     
     # save label items to json file with the same path as image file
     def save_label_items(self):
+        weather_info = []
+        if self.time_buttons.checkedButton():
+            weather_info.append(self.time_buttons.checkedButton().text())
+        if self.precipitation_buttons.checkedButton():
+            weather_info.append(self.precipitation_buttons.checkedButton().text())
+        if self.weather_buttons.checkedButton():
+            weather_info.append(self.weather_buttons.checkedButton().text())
+
+        print(f"{weather_info=}")
+
         json_filename = os.path.join(
             os.path.dirname(self._image_path), f"{self._image_name}.json"
         )
-        print(json_filename)
 
-        label_items_data = self.label_items_to_dict()
-        print("\nsaving:", label_items_data)
+        data_json = {}
+        data_json['objects'] = self.label_items_to_dict()
+        data_json['weather'] = weather_info
         with open(json_filename, "w") as json_file:
-            json.dump(label_items_data, json_file, indent=4)
+            json.dump(data_json, json_file, indent=4)
         
         print(f"Label items saved to {json_filename}")
 
