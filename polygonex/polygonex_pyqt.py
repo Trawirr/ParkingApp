@@ -12,6 +12,8 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
+import numpy as np
+import cv2
 import json
 import time
 import os
@@ -471,6 +473,7 @@ class MainWindow(QMainWindow):
         self._image_path = QFileDialog.getOpenFileName(self, 'Load file', '', "Parking images (*.jpg *.png)")[0]
         if self._image_path:
             self._image = mpimg.imread(self._image_path)
+            print(f"{type(self._image)=}")
             image_name = self._image_path
             for sep in ['\\']:
                 image_name = image_name.replace(sep, '/')
@@ -506,6 +509,10 @@ class MainWindow(QMainWindow):
             self._center = [self._image.shape[0] // 2, self._image.shape[1] // 2]
             self._zoom = 1
             self.press_pos = None
+
+            gray_image = np.dot(self._image[...,:3], [0.299, 0.587, 0.114])
+            brightness = np.mean(gray_image)
+            self.setWindowTitle(f"Polygonex | brightness: {brightness:.3f}")
         
         self.remove_all_polygons()
         self._polygons = {}
