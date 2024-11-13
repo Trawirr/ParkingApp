@@ -265,7 +265,7 @@ class MainWindow(QMainWindow):
         ]
     
     # save label items to json file with the same path as image file
-    def save_label_items(self):
+    def save_label_items(self, json_path):
         weather_info = []
         if self.time_buttons.checkedButton():
             weather_info.append(self.time_buttons.checkedButton().text())
@@ -276,18 +276,14 @@ class MainWindow(QMainWindow):
 
         print(f"{weather_info=}")
 
-        json_filename = os.path.join(
-            os.path.dirname(self._image_path), f"{self._image_name}.json"
-        )
-
         data_json = {}
         data_json['objects'] = self.label_items_to_dict()
         data_json['weather'] = [w for w in weather_info if w != "none"]
         print(f"saved weather info: {data_json['weather']}")
-        with open(json_filename, "w") as json_file:
+        with open(json_path, "w") as json_file:
             json.dump(data_json, json_file, indent=4)
         
-        print(f"Label items saved to {json_filename}")
+        print(f"Label items saved to {json_path}")
 
     # clear table, label items list and load label items from json file
     def load_label_items(self, json_path):
@@ -485,14 +481,21 @@ class MainWindow(QMainWindow):
 
     def menu_option_load_json(self):
         print("Load Label Items option selected")
-        json_path = QFileDialog.getOpenFileName(self, 'Load Label Items', '', "JSON files (*.json)")[0]
+        json_path = QFileDialog.getOpenFileName(self, "Load Label Items", '', "JSON files (*.json)")[0]
         if json_path:
             self.load_label_items(json_path)
             self.remove_all_polygons()
 
     def menu_option_save(self):
         print("Save option selected")
-        self.save_label_items()
+        json_path_initial = os.path.join(
+            os.path.dirname(self._image_path), f"{self._image_name}.json"
+        )
+
+        json_path = QFileDialog.getSaveFileName(self, "Save JSON", json_path_initial, "JSON files (*.json)")[0]
+
+        if json_path:
+            self.save_label_items(json_path)
 
     def display_image(self):
         if self._image is not None:
