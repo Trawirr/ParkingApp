@@ -523,7 +523,7 @@ class MainWindow(QMainWindow):
         self._polygons = {}
         for row in range(self.table_widget.rowCount()):
             checkbox_widget = self.table_widget.cellWidget(row, 1)
-            checkbox = checkbox_widget.layout().itemAt(1).widget()
+            checkbox = checkbox_widget.layout().itemAt(0).widget()
             if checkbox.isChecked():
                 self.add_polygon(row)
 
