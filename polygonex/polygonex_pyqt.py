@@ -141,7 +141,7 @@ class MainWindow(QMainWindow):
             self.weather_layout.addWidget(new_radio_button, i + 1, 0)
 
         precipitation_label = QLabel("Precipitation")
-        self.weather_layout.addWidget(precipitation_label, 0, 2)
+        self.weather_layout.addWidget(precipitation_label, 0, 1)
         self.precipitation_buttons = QButtonGroup(self)
         for i, l in enumerate(["none", "rain", "snow", "fog"]):
             new_radio_button = QRadioButton(l)
@@ -151,7 +151,7 @@ class MainWindow(QMainWindow):
             self.weather_layout.addWidget(new_radio_button, i + 1, 1)
     
         weather_label = QLabel("Weather")
-        self.weather_layout.addWidget(weather_label, 0, 1)
+        self.weather_layout.addWidget(weather_label, 0, 2)
         self.weather_buttons = QButtonGroup(self)
         for i, l in enumerate(["none", "sunny", "cloudy"]):
             new_radio_button = QRadioButton(l)
@@ -160,6 +160,8 @@ class MainWindow(QMainWindow):
                 new_radio_button.setChecked(True)
             self.weather_layout.addWidget(new_radio_button, i + 1, 2)
 
+        self.weather_groupbox.setFixedWidth(400)
+        self.table_widget.setFixedWidth(400)
         self.weather_groupbox.setLayout(self.weather_layout)
         left_layout.addWidget(self.weather_groupbox)
 
