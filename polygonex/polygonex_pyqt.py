@@ -368,15 +368,15 @@ class MainWindow(QMainWindow):
         col = item.column()
         print(f"item [{row}, {col}] changed")
 
-        if col == 2:
+        if col == 3:
             self._label_items[row].name = item.text()
-        elif col == 3:
+        elif col == 4:
             self._label_items[row].tags = item.text()
 
     # handle click on checkbox cell
     def handle_cell_clicked(self, row, column):
         print(f"cell in row {row} clicked")
-        if column == 1:
+        if column == 2:
             self.select_color(row)
 
             checkbox_widget = self.table_widget.cellWidget(row, 1)
@@ -555,7 +555,7 @@ class MainWindow(QMainWindow):
         if color.isValid():
             color_item = QTableWidgetItem()
             color_item.setBackground(color)
-            self.table_widget.setItem(row, 1, color_item)
+            self.table_widget.setItem(row, 2, color_item)
             self._label_items[row].color = color.name()
             
             print(f"Color for row {row} selected: {color.name()}")
