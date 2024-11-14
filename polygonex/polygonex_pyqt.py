@@ -426,6 +426,8 @@ class MainWindow(QMainWindow):
             elif event.button == 2:
                 self.press_pos = (event.xdata, event.ydata)
                 self._drag = True
+                self._start_drag_x = event.xdata
+                self._start_drag_y = event.ydata
 
             # RMB - end of sequence
             elif event.button == 3:
@@ -436,25 +438,26 @@ class MainWindow(QMainWindow):
         # self.update_image()
 
     def plot_release(self, event):
-        if event.button == 3:
+        if event.button == 2:
             self._drag = False
 
     def plot_move(self, event):
-        if self._image is not None:
-            if self._drag and self.press_pos and event.xdata is not None and event.ydata is not None:
-                print("event", event.xdata, event.ydata)
-                dx = event.xdata - self.press_pos[0]
-                dy = event.ydata - self.press_pos[1]
-                self.press_pos = (event.xdata, event.ydata)
-                print("dx dy", dx, dy)
+        if not self._drag or event.xdata is None or event.ydata is None:
+            return
+        
+        dx = event.xdata - self._start_drag_x
+        dy = event.ydata - self._start_drag_y
 
-                self._ax.set_xlim(self._ax.get_xlim() - dx)
-                self._ax.set_ylim(self._ax.get_ylim() - dy)
-                self._center = [sum(self._ax.get_xlim()) / 2, sum(self._ax.get_ylim()) / 2]
+        xlim = self._ax.get_xlim()
+        ylim = self._ax.get_ylim()
+        
+        self._ax.set_xlim(xlim[0] - dx, xlim[1] - dx)
+        self._ax.set_ylim(ylim[0] - dy, ylim[1] - dy)
 
-                self._canvas.draw()
-            if not self.press_pos and event.xdata is not None and event.ydata is not None:
-                self.press_pos = (event.xdata, event.ydata)
+        self._canvas.draw()
+
+        self._start_drag_x = event.xdata
+        self._start_drag_y = event.ydata
 
     def plot_scroll(self, event):
         print("scroll", event.step, event.xdata, event.ydata)
