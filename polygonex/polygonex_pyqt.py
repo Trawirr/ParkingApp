@@ -65,7 +65,7 @@ class MainWindow(QMainWindow):
         self._image_name = None
 
         self.setWindowTitle("Polygonex")
-        self.setWindowIcon(QtGui.QIcon(r'C:\Users\gtraw\OneDrive\Pulpit\UM sem. 2\ProjektBadawczy\apps\polygonex\logos\l4.jpg'))
+        #self.setWindowIcon(QtGui.QIcon(r'C:\Users\gtraw\OneDrive\Pulpit\UM sem. 2\ProjektBadawczy\apps\polygonex\logos\l4.jpg'))
         self.setGeometry(100, 100, 1000, 600)
 
         # main widget
