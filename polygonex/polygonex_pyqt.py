@@ -163,6 +163,10 @@ class MainWindow(QMainWindow):
                 new_radio_button.setChecked(True)
             self.weather_layout.addWidget(new_radio_button, i + 1, 2)
 
+        self.time_buttons.buttonClicked.connect(self.radio_button_click)
+        self.precipitation_buttons.buttonClicked.connect(self.radio_button_click)
+        self.weather_buttons.buttonClicked.connect(self.radio_button_click)
+
         self.weather_groupbox.setFixedWidth(400)
         self.table_widget.setFixedWidth(400)
         self.weather_groupbox.setLayout(self.weather_layout)
@@ -179,6 +183,11 @@ class MainWindow(QMainWindow):
         self.save_shortcut = QShortcut(QtGui.QKeySequence('CTRL+S'), self)
         self.save_shortcut.activated.connect(self.menu_option_save)
 
+        self.update_title()
+
+    def update_title(self):
+        self.setWindowTitle(f"Polygonex | last: {self._last_action} | brightness: {self._brightness:.3f}")
+
     def add_item(self, selected=False, color="#000", name="", tags="", points=[]):
         self._item_counter += 1
         print(f"adding item, id={self._item_counter} {selected=}, {color=}, {name=}, {tags=}, {points=}")
@@ -189,7 +198,7 @@ class MainWindow(QMainWindow):
         
         checkbox = QCheckBox()
         checkbox.setChecked(self._label_items[row_position].selected)
-        checkbox.stateChanged.connect(lambda state, row=row_position: self.update_item_state(row, "selected", state == Qt.Checked))
+        checkbox.stateChanged.connect(lambda state, row=row_position: self.update_item_state(row, state == Qt.Checked))
 
         checkbox_widget = ClickableCheckboxWidget(checkbox)
         
@@ -214,6 +223,9 @@ class MainWindow(QMainWindow):
 
         print("new item added")
         self.update_select_all_button()
+
+        self._last_action = f'item {name_item} added'
+        self.update_title()
 
     def confirm_delete_item(self, row):
         reply = QMessageBox.question(
@@ -246,22 +258,23 @@ class MainWindow(QMainWindow):
             checkbox = self.table_widget.cellWidget(i, 1).layout().itemAt(0).widget()
             if checkbox is not None:
                 checkbox.stateChanged.disconnect() 
-                checkbox.stateChanged.connect(lambda state, row=i: self.update_item_state(row, "selected", state == Qt.Checked))
+                checkbox.stateChanged.connect(lambda state, row=i: self.update_item_state(row, state == Qt.Checked))
+        
+        self._last_action = 'item deleted'
+        self.update_title()
 
     # update one of item's fields
-    def update_item_state(self, row, field, value):
-        if field == "selected":
-            self._label_items[row].selected = value
-            if value:
-                self.add_polygon(row)
-            else:
-                self.remove_polygon(row)
-            self.update_select_all_button()
-        elif field == "name":
-            self._label_items[row].name = value
-        elif field == "tags":
-            self._label_items[row].tags = value
-        print("updated:", row, field, value, self._label_items[row])
+    def update_item_state(self, row, value):
+        self._label_items[row].selected = value
+        if value:
+            self.add_polygon(row)
+        else:
+            self.remove_polygon(row)
+        self.update_select_all_button()
+        
+        self._last_action = 'item selected'
+        self.update_title()
+        print("selected:", row)
 
     # convert all label items to dict
     def label_items_to_dict(self):
@@ -293,6 +306,9 @@ class MainWindow(QMainWindow):
         print(f"saved weather info: {data_json['weather']}")
         with open(json_path, "w") as json_file:
             json.dump(data_json, json_file, indent=4)
+
+        self._last_action = f'json saved: {json_path}'
+        self.update_title()
         
         print(f"Label items saved to {json_path}")
 
@@ -333,6 +349,9 @@ class MainWindow(QMainWindow):
                         self.weather_layout.itemAtPosition(button_id + 1, i).widget().setChecked(True)
                     except Exception as e:
                         pass
+
+            self._last_action = f'json loaded: {json_path}'
+            self.update_title()
             
             print(f"Loaded label items from {json_path}")
 
@@ -379,8 +398,11 @@ class MainWindow(QMainWindow):
 
         if col == 3:
             self._label_items[row].name = item.text()
+            self._last_action = "item's name updated"
         elif col == 4:
             self._label_items[row].tags = item.text()
+            self._last_action = "item's tags updated"
+        self.update_title()
 
     # handle click on checkbox cell
     def handle_cell_clicked(self, row, column):
@@ -415,6 +437,21 @@ class MainWindow(QMainWindow):
         else:
             self._select_all_button.setText("Select all")
 
+    def radio_button_click(self, button):
+        group = self.sender()
+        group_name = ""
+
+        if group == self.time_buttons:
+            group_name = "time"
+        elif group == self.precipitation_buttons:
+            group_name = "precipitation"
+        elif group == self.weather_buttons:
+            group_name = "weather"
+
+        self._last_action = f"{group_name} selected"
+        self.update_title()
+        print(f"radio button clicked: {group_name} {button.text()}")
+
     def plot_click(self, event):
         x, y = event.xdata, event.ydata
         print("clicked", event.button, x, y)
@@ -430,6 +467,9 @@ class MainWindow(QMainWindow):
                     self._point_tmp = self._ax.plot(x, y, 'ro')
                 self._points.append([x, y])
                 self._canvas.draw()
+
+                self._last_action = f'plot clicked ({x}, {y})'
+                self.update_title()
 
             # wheel button
             elif event.button == 2:
@@ -493,6 +533,9 @@ class MainWindow(QMainWindow):
             self._image_name = image_name
             
             self.display_image()
+
+            self._last_action = f'image loaded: {self._image_path}'
+            self.update_title()
 
     def menu_option_load_json(self):
         print("Load Label Items option selected")
@@ -569,6 +612,9 @@ class MainWindow(QMainWindow):
             self.table_widget.setItem(row, 2, color_item)
             self._label_items[row].color = color.name()
             
+            self._last_action = 'color changed'
+            self.update_title()
+
             print(f"Color for row {row} selected: {color.name()}")
 
 if __name__ == "__main__":
