@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QTableWidget,
     QTableWidgetItem, QPushButton, QMenuBar, QAction, QScrollArea, QCheckBox, QLineEdit,
     QFileDialog, QAbstractItemView, QColorDialog, QMessageBox, QGroupBox,
-    QRadioButton, QButtonGroup, QLabel, QGridLayout
+    QRadioButton, QButtonGroup, QLabel, QGridLayout, QShortcut
 )
 from PyQt5.QtCore import Qt, QStringListModel
 from PyQt5 import QtGui
@@ -50,6 +50,8 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
+        self._last_action = '---'
+
         # table items
         self._label_items = []
         self._polygons = {}
@@ -63,6 +65,7 @@ class MainWindow(QMainWindow):
         self._image = None
         self._image_path = None
         self._image_name = None
+        self._brightness = 0
 
         self.setWindowTitle("Polygonex")
         #self.setWindowIcon(QtGui.QIcon(r'C:\Users\gtraw\OneDrive\Pulpit\UM sem. 2\ProjektBadawczy\apps\polygonex\logos\l4.jpg'))
@@ -171,6 +174,10 @@ class MainWindow(QMainWindow):
 
         main_layout.addLayout(left_layout)
         main_layout.addWidget(self._canvas)
+
+        # shortcuts
+        self.save_shortcut = QShortcut(QtGui.QKeySequence('CTRL+S'), self)
+        self.save_shortcut.activated.connect(self.menu_option_save)
 
     def add_item(self, selected=False, color="#000", name="", tags="", points=[]):
         self._item_counter += 1
@@ -516,8 +523,7 @@ class MainWindow(QMainWindow):
             self.press_pos = None
 
             gray_image = np.dot(self._image[...,:3], [0.299, 0.587, 0.114])
-            brightness = np.mean(gray_image)
-            self.setWindowTitle(f"Polygonex | brightness: {brightness:.3f}")
+            self._brightness = np.mean(gray_image)
         
         self.remove_all_polygons()
         self._polygons = {}
