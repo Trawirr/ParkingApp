@@ -68,14 +68,15 @@ class MainWindow(QMainWindow):
         self._brightness = 0
 
         self.setWindowTitle("Polygonex")
-        #self.setWindowIcon(QtGui.QIcon(r'C:\Users\gtraw\OneDrive\Pulpit\UM sem. 2\ProjektBadawczy\apps\polygonex\logos\l4.jpg'))
         self.setGeometry(100, 100, 1000, 600)
 
         # main widget
         main_widget = QWidget()
         self.setCentralWidget(main_widget)
 
-        main_layout = QHBoxLayout(main_widget)
+        main_layout = QVBoxLayout(main_widget)
+        content_layout = QHBoxLayout()
+        main_layout.addLayout(content_layout)
         left_layout = QVBoxLayout()
 
         # matplotlib canvas
@@ -176,17 +177,22 @@ class MainWindow(QMainWindow):
         left_layout.addWidget(self.table_widget)
         # left_layout.addLayout(button_layout)
 
-        main_layout.addLayout(left_layout)
-        main_layout.addWidget(self._canvas)
+        content_layout.addLayout(left_layout)
+        content_layout.addWidget(self._canvas)
+
+        # status label
+        self._status_label = QLabel("")
+        self._status_label.setAlignment(Qt.AlignLeft)
+        main_layout.addWidget(self._status_label)
 
         # shortcuts
         self.save_shortcut = QShortcut(QtGui.QKeySequence('CTRL+S'), self)
         self.save_shortcut.activated.connect(self.menu_option_save)
 
-        self.update_title()
+        self.update_status()
 
-    def update_title(self):
-        self.setWindowTitle(f"Polygonex | last: {self._last_action} | brightness: {self._brightness:.3f}")
+    def update_status(self):
+        self._status_label.setText(f"brightness: {self._brightness:.4f} | last: {self._last_action}")
 
     def add_item(self, selected=False, color="#000", name="", tags="", points=[]):
         self._item_counter += 1
@@ -224,8 +230,8 @@ class MainWindow(QMainWindow):
         print("new item added")
         self.update_select_all_button()
 
-        self._last_action = f'item {name_item} added'
-        self.update_title()
+        self._last_action = f'item {name_item.text()} added'
+        self.update_status()
 
     def confirm_delete_item(self, row):
         reply = QMessageBox.question(
@@ -261,7 +267,7 @@ class MainWindow(QMainWindow):
                 checkbox.stateChanged.connect(lambda state, row=i: self.update_item_state(row, state == Qt.Checked))
         
         self._last_action = 'item deleted'
-        self.update_title()
+        self.update_status()
 
     # update one of item's fields
     def update_item_state(self, row, value):
@@ -273,7 +279,7 @@ class MainWindow(QMainWindow):
         self.update_select_all_button()
         
         self._last_action = 'item selected'
-        self.update_title()
+        self.update_status()
         print("selected:", row)
 
     # convert all label items to dict
@@ -308,7 +314,7 @@ class MainWindow(QMainWindow):
             json.dump(data_json, json_file, indent=4)
 
         self._last_action = f'json saved: {json_path}'
-        self.update_title()
+        self.update_status()
         
         print(f"Label items saved to {json_path}")
 
@@ -351,7 +357,7 @@ class MainWindow(QMainWindow):
                         pass
 
             self._last_action = f'json loaded: {json_path}'
-            self.update_title()
+            self.update_status()
             
             print(f"Loaded label items from {json_path}")
 
@@ -402,7 +408,7 @@ class MainWindow(QMainWindow):
         elif col == 4:
             self._label_items[row].tags = item.text()
             self._last_action = "item's tags updated"
-        self.update_title()
+        self.update_status()
 
     # handle click on checkbox cell
     def handle_cell_clicked(self, row, column):
@@ -449,7 +455,7 @@ class MainWindow(QMainWindow):
             group_name = "weather"
 
         self._last_action = f"{group_name} selected"
-        self.update_title()
+        self.update_status()
         print(f"radio button clicked: {group_name} {button.text()}")
 
     def plot_click(self, event):
@@ -469,7 +475,7 @@ class MainWindow(QMainWindow):
                 self._canvas.draw()
 
                 self._last_action = f'plot clicked ({x}, {y})'
-                self.update_title()
+                self.update_status()
 
             # wheel button
             elif event.button == 2:
@@ -535,7 +541,7 @@ class MainWindow(QMainWindow):
             self.display_image()
 
             self._last_action = f'image loaded: {self._image_path}'
-            self.update_title()
+            self.update_status()
 
     def menu_option_load_json(self):
         print("Load Label Items option selected")
@@ -613,7 +619,7 @@ class MainWindow(QMainWindow):
             self._label_items[row].color = color.name()
             
             self._last_action = 'color changed'
-            self.update_title()
+            self.update_status()
 
             print(f"Color for row {row} selected: {color.name()}")
 
