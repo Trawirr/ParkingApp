@@ -394,7 +394,7 @@ class MainWindow(QMainWindow):
 
     # remove polygons for all label items
     def remove_all_polygons(self):
-        rows = list(self._polygons.keys())
+        rows = list(range(len(self._label_items)))
         for row in rows:
             self.remove_polygon(row)
         print("Removed all polygons")
@@ -549,10 +549,11 @@ class MainWindow(QMainWindow):
 
     def menu_option_load_json(self):
         print("Load Label Items option selected")
+        print(f"{self._polygons=}")
         json_path = QFileDialog.getOpenFileName(self, "Load Label Items", '', "JSON files (*.json)")[0]
         if json_path:
-            self.load_label_items(json_path)
             self.remove_all_polygons()
+            self.load_label_items(json_path)
 
     def menu_option_save(self):
         print("Save option selected")
