@@ -135,12 +135,12 @@ class MainWindow(QMainWindow):
         self.weather_groupbox = QGroupBox("Weather Conditions")
         self.weather_layout = QGridLayout()
 
-        time_label = QLabel("Time")
+        time_label = QLabel("Brightness")
         self.weather_layout.addWidget(time_label, 0, 0)
-        self.time_buttons = QButtonGroup(self)
-        for i, l in enumerate(["none", "day", "evening", "night"]):
+        self.brightness_buttons = QButtonGroup(self)
+        for i, l in enumerate(["bright", "dark", "night"]):
             new_radio_button = QRadioButton(l)
-            self.time_buttons.addButton(new_radio_button, id=i + 1)
+            self.brightness_buttons.addButton(new_radio_button, id=i + 1)
             if i == 0:
                 new_radio_button.setChecked(True)
             self.weather_layout.addWidget(new_radio_button, i + 1, 0)
@@ -158,14 +158,14 @@ class MainWindow(QMainWindow):
         weather_label = QLabel("Weather")
         self.weather_layout.addWidget(weather_label, 0, 2)
         self.weather_buttons = QButtonGroup(self)
-        for i, l in enumerate(["none", "sunny", "cloudy"]):
+        for i, l in enumerate(["sunny", "cloudy"]):
             new_radio_button = QRadioButton(l)
             self.weather_buttons.addButton(new_radio_button, id=i + 1)
             if i == 0:
                 new_radio_button.setChecked(True)
             self.weather_layout.addWidget(new_radio_button, i + 1, 2)
 
-        self.time_buttons.buttonClicked.connect(self.radio_button_click)
+        self.brightness_buttons.buttonClicked.connect(self.radio_button_click)
         self.precipitation_buttons.buttonClicked.connect(self.radio_button_click)
         self.weather_buttons.buttonClicked.connect(self.radio_button_click)
 
@@ -193,7 +193,7 @@ class MainWindow(QMainWindow):
         self.update_status()
 
     def update_status(self):
-        self._status_label.setText(f"brightness: {self._brightness:.4f} | last: {self._last_action}")
+        self._status_label.setText(f"brightness: {self._brightness:.3f} | last: {self._last_action}")
 
     def add_item(self, selected=False, color="#000", name="", tags="", points=[]):
         self._item_counter += 1
@@ -298,8 +298,8 @@ class MainWindow(QMainWindow):
     # save label items to json file with the same path as image file
     def save_label_items(self, json_path):
         weather_info = []
-        if self.time_buttons.checkedButton():
-            weather_info.append(self.time_buttons.checkedButton().text())
+        if self.brightness_buttons.checkedButton():
+            weather_info.append(self.brightness_buttons.checkedButton().text())
         if self.precipitation_buttons.checkedButton():
             weather_info.append(self.precipitation_buttons.checkedButton().text())
         if self.weather_buttons.checkedButton():
@@ -450,8 +450,8 @@ class MainWindow(QMainWindow):
         group = self.sender()
         group_name = ""
 
-        if group == self.time_buttons:
-            group_name = "time"
+        if group == self.brightness_buttons:
+            group_name = "brightness"
         elif group == self.precipitation_buttons:
             group_name = "precipitation"
         elif group == self.weather_buttons:
