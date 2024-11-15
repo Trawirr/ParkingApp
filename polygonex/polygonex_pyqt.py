@@ -51,6 +51,7 @@ class MainWindow(QMainWindow):
         super().__init__()
 
         self._last_action = '---'
+        self._save_path = None
 
         # table items
         self._label_items = []
@@ -356,6 +357,8 @@ class MainWindow(QMainWindow):
                     except Exception as e:
                         pass
 
+            self._save_path = None
+
             self._last_action = f'json loaded: {json_path}'
             self.update_status()
             
@@ -539,6 +542,7 @@ class MainWindow(QMainWindow):
             self._image_name = image_name
             
             self.display_image()
+            self._save_path = None
 
             self._last_action = f'image loaded: {self._image_path}'
             self.update_status()
@@ -552,13 +556,18 @@ class MainWindow(QMainWindow):
 
     def menu_option_save(self):
         print("Save option selected")
-        json_path_initial = os.path.join(
-            os.path.dirname(self._image_path), f"{self._image_name}.json"
-        )
+        json_path = ""
+        if self._save_path:
+            json_path = self._save_path
+        else:
+            json_path_initial = os.path.join(
+                os.path.dirname(self._image_path), f"{self._image_name}.json"
+            )
 
-        json_path = QFileDialog.getSaveFileName(self, "Save JSON", json_path_initial, "JSON files (*.json)")[0]
+            json_path = QFileDialog.getSaveFileName(self, "Save JSON", json_path_initial, "JSON files (*.json)")[0]
 
         if json_path:
+            self._save_path = json_path
             self.save_label_items(json_path)
 
     def display_image(self):
