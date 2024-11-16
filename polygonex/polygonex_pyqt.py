@@ -85,7 +85,6 @@ class MainWindow(QMainWindow):
         self._ax = self._canvas.figure.subplots()
 
         self._canvas.mpl_connect('button_press_event', self.plot_click)
-        self._canvas.mpl_connect('motion_notify_event', self.plot_move)
         self._canvas.mpl_connect('button_release_event', self.plot_release)
         self._canvas.mpl_connect('scroll_event', self.plot_scroll)
 
@@ -482,8 +481,6 @@ class MainWindow(QMainWindow):
 
             # wheel button
             elif event.button == 2:
-                self.press_pos = (event.xdata, event.ydata)
-                self._drag = True
                 self._start_drag_x = event.xdata
                 self._start_drag_y = event.ydata
 
@@ -497,25 +494,14 @@ class MainWindow(QMainWindow):
 
     def plot_release(self, event):
         if event.button == 2:
-            self._drag = False
+            dx = event.xdata - self._start_drag_x
+            dy = event.ydata - self._start_drag_y
 
-    def plot_move(self, event):
-        if not self._drag or event.xdata is None or event.ydata is None:
-            return
-        
-        dx = event.xdata - self._start_drag_x
-        dy = event.ydata - self._start_drag_y
-
-        xlim = self._ax.get_xlim()
-        ylim = self._ax.get_ylim()
-        
-        self._ax.set_xlim(xlim[0] - dx, xlim[1] - dx)
-        self._ax.set_ylim(ylim[0] - dy, ylim[1] - dy)
-
-        self._canvas.draw()
-
-        self._start_drag_x = event.xdata
-        self._start_drag_y = event.ydata
+            print(f"1. {self._mouse_position=}")
+            cx, cy = self._center
+            self._center = [cx - dx, cy - dy]
+            print(f"2. {self._mouse_position=}")
+            self.update_image()
 
     def plot_scroll(self, event):
         print("scroll", event.step, event.xdata, event.ydata)
