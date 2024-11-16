@@ -158,7 +158,7 @@ class MainWindow(QMainWindow):
         weather_label = QLabel("Weather")
         self.weather_layout.addWidget(weather_label, 0, 2)
         self.weather_buttons = QButtonGroup(self)
-        for i, l in enumerate(["sunny", "cloudy"]):
+        for i, l in enumerate(["none", "sunny", "cloudy"]):
             new_radio_button = QRadioButton(l)
             self.weather_buttons.addButton(new_radio_button, id=i + 1)
             if i == 0:
@@ -348,7 +348,7 @@ class MainWindow(QMainWindow):
             # load weather conditions
             weather_data = json_data['weather']
             weather_options = [
-                ["none", "day", "evening", "night"],
+                ["bright", "dark", "night"],
                 ["none", "rain", "snow", "fog"],
                 ["none", "sunny", "cloudy"]
             ]
