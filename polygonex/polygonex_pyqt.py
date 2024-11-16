@@ -62,6 +62,7 @@ class MainWindow(QMainWindow):
         self._zoom = None
         self._center = None
         self._points = []
+        self._line_plots = []
         self._drag = False
         self._image = None
         self._image_path = None
@@ -188,6 +189,8 @@ class MainWindow(QMainWindow):
         # shortcuts
         self.save_shortcut = QShortcut(QtGui.QKeySequence('CTRL+S'), self)
         self.save_shortcut.activated.connect(self.menu_option_save)
+        self.save_shortcut = QShortcut(QtGui.QKeySequence('CTRL+Z'), self)
+        self.save_shortcut.activated.connect(self.undo_point)
 
         self.update_status()
 
@@ -401,6 +404,18 @@ class MainWindow(QMainWindow):
             self.remove_polygon(row)
         print("Removed all polygons")
 
+    # undo last left click
+    def undo_point(self):
+        print("undo point")
+        if self._line_plots and self._points:
+            self._line_plots[-1][0].remove()
+            self._line_plots.pop()
+            self._points.pop()
+            self._canvas.draw()
+
+            self._last_action = 'undo point'
+            self.update_status()
+
     # update label item's text fields
     def handle_item_changed(self, item):
         row = item.row()
@@ -470,7 +485,7 @@ class MainWindow(QMainWindow):
             # LMB - add point to polygon
             if event.button == 1:
                 if self._points:
-                    self._ax.plot([self._points[-1][0], x], [self._points[-1][1], y], 'r-')
+                    self._line_plots.append(self._ax.plot([self._points[-1][0], x], [self._points[-1][1], y], 'r-'))
                     if self._point_tmp:
                         self._point_tmp[0].remove()
                         self._point_tmp = None
@@ -491,6 +506,7 @@ class MainWindow(QMainWindow):
             elif event.button == 3:
                 self.add_item(selected=True, points=self._points)
                 self._points = []
+                self._line_plots = []
                 self.display_image()
 
         # self.update_image()
