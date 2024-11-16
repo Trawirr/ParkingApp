@@ -224,7 +224,7 @@ class MainWindow(QMainWindow):
         self.table_widget.setItem(row_position, 2, color_item)
 
         delete_button = QPushButton("X")
-        delete_button.clicked.connect(lambda _, row=row_position: self.confirm_delete_item(row))
+        delete_button.clicked.connect(lambda _, id=new_item.id: self.confirm_delete_item(id))
         self.table_widget.setCellWidget(row_position, 0, delete_button)
 
         print("new item added")
@@ -233,7 +233,7 @@ class MainWindow(QMainWindow):
         self._last_action = f'item {name_item.text()} added'
         self.update_status()
 
-    def confirm_delete_item(self, row):
+    def confirm_delete_item(self, id):
         reply = QMessageBox.question(
             self,
             "Confirm Deletion",
@@ -243,9 +243,12 @@ class MainWindow(QMainWindow):
         )
         
         if reply == QMessageBox.Yes:
-            self.delete_item(row)
+            self.delete_item(id)
 
-    def delete_item(self, row):
+    def delete_item(self, id):
+        for r, li in enumerate(self._label_items):
+            if id == li.id:
+                row = r
         if row < len(self._label_items):
             self.remove_polygon(row)
             self._label_items.pop(row)
