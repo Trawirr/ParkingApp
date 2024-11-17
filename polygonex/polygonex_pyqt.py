@@ -195,7 +195,7 @@ class MainWindow(QMainWindow):
         self.update_status()
 
     def update_status(self):
-        self._status_label.setText(f"brightness: {self._brightness:.3f} | last: {self._last_action}")
+        self._status_label.setText(f"image: {self._image_name} | brightness: {self._brightness:.3f} | last: {self._last_action}")
 
     def add_item(self, selected=False, color="#000", name="", tags="", points=[]):
         self._item_counter += 1
