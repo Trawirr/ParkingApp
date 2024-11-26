@@ -205,12 +205,13 @@ class MainWindow(QMainWindow):
         selector_layout.addWidget(self.top_polygon_selector)
         selector_layout.addWidget(QLabel("Bottom Polygon:"))
         selector_layout.addWidget(self.bottom_polygon_selector)
-        left_layout.addWidget(self.subtract_button)
 
         left_layout.addLayout(selector_layout)
+        left_layout.addWidget(self.subtract_button)
 
         self.update_status()
 
+    # updating intersection comboboxes
     def update_polygon_selectors(self):
         self.top_polygon_selector.clear()
         self.bottom_polygon_selector.clear()
@@ -219,6 +220,7 @@ class MainWindow(QMainWindow):
             self.top_polygon_selector.addItem(item.name, item.id)
             self.bottom_polygon_selector.addItem(item.name, item.id)
 
+    # deleting intersection of two selected polygons from the 'bottom' one
     def subtract_intersection(self):
         top_id = self.top_polygon_selector.currentData()
         bottom_id = self.bottom_polygon_selector.currentData()
