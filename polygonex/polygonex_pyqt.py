@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QTableWidget,
     QTableWidgetItem, QPushButton, QMenuBar, QAction, QScrollArea, QCheckBox, QLineEdit,
     QFileDialog, QAbstractItemView, QColorDialog, QMessageBox, QGroupBox,
-    QRadioButton, QButtonGroup, QLabel, QGridLayout, QShortcut
+    QRadioButton, QButtonGroup, QLabel, QGridLayout, QShortcut, QComboBox
 )
 from PyQt5.QtCore import Qt, QStringListModel
 from PyQt5 import QtGui
@@ -12,6 +12,8 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
+from shapely.geometry import Polygon
+from shapely.ops import unary_union
 import numpy as np
 import cv2
 import json
@@ -192,6 +194,78 @@ class MainWindow(QMainWindow):
         self.save_shortcut = QShortcut(QtGui.QKeySequence('CTRL+Z'), self)
         self.save_shortcut.activated.connect(self.undo_point)
 
+        # intersection removal
+        self.top_polygon_selector = QComboBox()
+        self.bottom_polygon_selector = QComboBox()
+        self.subtract_button = QPushButton("Subtract Intersection")
+        self.subtract_button.clicked.connect(self.subtract_intersection)
+
+        selector_layout = QHBoxLayout()
+        selector_layout.addWidget(QLabel("Top Polygon:"))
+        selector_layout.addWidget(self.top_polygon_selector)
+        selector_layout.addWidget(QLabel("Bottom Polygon:"))
+        selector_layout.addWidget(self.bottom_polygon_selector)
+        left_layout.addWidget(self.subtract_button)
+
+        left_layout.addLayout(selector_layout)
+
+        self.update_status()
+
+    def update_polygon_selectors(self):
+        self.top_polygon_selector.clear()
+        self.bottom_polygon_selector.clear()
+
+        for item in self._label_items:
+            self.top_polygon_selector.addItem(item.name, item.id)
+            self.bottom_polygon_selector.addItem(item.name, item.id)
+
+    def subtract_intersection(self):
+        top_id = self.top_polygon_selector.currentData()
+        bottom_id = self.bottom_polygon_selector.currentData()
+
+        if top_id is None or bottom_id is None:
+            QMessageBox.warning(self, "Warning", "Please select both top and bottom polygons.")
+            return
+
+        top_item = next((item for item in self._label_items if item.id == top_id), None)
+        bottom_item = next((item for item in self._label_items if item.id == bottom_id), None)
+
+        if not top_item or not bottom_item:
+            QMessageBox.warning(self, "Warning", "Invalid polygon selection.")
+            return
+
+        if not len(top_item.points) > 2 or not len(bottom_item.points) > 2:
+            QMessageBox.warning(self, "Warning", "Both polygons must have defined points.")
+            return
+        
+        confirm = QMessageBox.question(
+            self,
+            "Confirm Subtraction",
+            f"Are you sure you want to subtract the intersection of '{top_item.name}' from '{bottom_item.name}'?",
+            QMessageBox.Yes | QMessageBox.No,
+        )
+
+        if confirm != QMessageBox.Yes:
+            return
+
+        top_polygon = Polygon(top_item.points)
+        bottom_polygon = Polygon(bottom_item.points)
+
+        if not top_polygon.is_valid or not bottom_polygon.is_valid:
+            QMessageBox.warning(self, "Warning", "One or both polygons are invalid.")
+            return
+
+        result_polygon = bottom_polygon.difference(top_polygon)
+
+        if result_polygon.is_empty:
+            bottom_item.points = []
+        else:
+            bottom_item.points = list(result_polygon.exterior.coords)
+
+        self.remove_polygon(self._label_items.index(bottom_item))
+        self.add_polygon(self._label_items.index(bottom_item))
+
+        self._last_action = f"intersection subtracted ({top_item.name=}, {bottom_item.name=})"
         self.update_status()
 
     def update_status(self):
@@ -232,6 +306,7 @@ class MainWindow(QMainWindow):
 
         print("new item added")
         self.update_select_all_button()
+        self.update_polygon_selectors()
 
         self._last_action = f'item {name_item.text()} added'
         self.update_status()
@@ -272,6 +347,9 @@ class MainWindow(QMainWindow):
                 checkbox.stateChanged.disconnect() 
                 checkbox.stateChanged.connect(lambda state, row=i: self.update_item_state(row, state == Qt.Checked))
         
+        self.update_select_all_button()
+        self.update_polygon_selectors()
+
         self._last_action = 'item deleted'
         self.update_status()
 
@@ -428,6 +506,7 @@ class MainWindow(QMainWindow):
         elif col == 4:
             self._label_items[row].tags = item.text()
             self._last_action = "item's tags updated"
+        self.update_polygon_selectors()
         self.update_status()
 
     # handle click on checkbox cell
