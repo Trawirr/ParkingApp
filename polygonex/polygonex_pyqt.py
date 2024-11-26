@@ -150,22 +150,32 @@ class MainWindow(QMainWindow):
         precipitation_label = QLabel("Precipitation")
         self.weather_layout.addWidget(precipitation_label, 0, 1)
         self.precipitation_buttons = QButtonGroup(self)
-        for i, l in enumerate(["none", "rain", "snow", "fog"]):
+        for i, l in enumerate(["none", "rainfall", "snowfall", "fog"]):
             new_radio_button = QRadioButton(l)
             self.precipitation_buttons.addButton(new_radio_button, id=i + 1)
             if i == 0:
                 new_radio_button.setChecked(True)
             self.weather_layout.addWidget(new_radio_button, i + 1, 1)
+
+        surface_label = QLabel("Surface")
+        self.weather_layout.addWidget(surface_label, 0, 2)
+        self.surface_buttons = QButtonGroup(self)
+        for i, l in enumerate(["none", "puddles", "snow"]):
+            new_radio_button = QRadioButton(l)
+            self.surface_buttons.addButton(new_radio_button, id=i + 1)
+            if i == 0:
+                new_radio_button.setChecked(True)
+            self.weather_layout.addWidget(new_radio_button, i + 1, 2)
     
         weather_label = QLabel("Weather")
-        self.weather_layout.addWidget(weather_label, 0, 2)
+        self.weather_layout.addWidget(weather_label, 0, 3)
         self.weather_buttons = QButtonGroup(self)
         for i, l in enumerate(["none", "sunny", "cloudy"]):
             new_radio_button = QRadioButton(l)
             self.weather_buttons.addButton(new_radio_button, id=i + 1)
             if i == 0:
                 new_radio_button.setChecked(True)
-            self.weather_layout.addWidget(new_radio_button, i + 1, 2)
+            self.weather_layout.addWidget(new_radio_button, i + 1, 3)
 
         self.brightness_buttons.buttonClicked.connect(self.radio_button_click)
         self.precipitation_buttons.buttonClicked.connect(self.radio_button_click)
@@ -387,6 +397,8 @@ class MainWindow(QMainWindow):
             weather_info.append(self.brightness_buttons.checkedButton().text())
         if self.precipitation_buttons.checkedButton():
             weather_info.append(self.precipitation_buttons.checkedButton().text())
+        if self.surface_buttons.checkedButton():
+            weather_info.append(self.surface_buttons.checkedButton().text())
         if self.weather_buttons.checkedButton():
             weather_info.append(self.weather_buttons.checkedButton().text())
 
@@ -429,7 +441,8 @@ class MainWindow(QMainWindow):
             weather_data = json_data['weather']
             weather_options = [
                 ["bright", "dark", "night"],
-                ["none", "rain", "snow", "fog"],
+                ["none", "rainfall", "snowfall", "fog"],
+                ['none', 'puddles', 'snow'],
                 ["none", "sunny", "cloudy"]
             ]
             for g in range(3):
