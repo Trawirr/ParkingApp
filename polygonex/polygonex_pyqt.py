@@ -209,6 +209,8 @@ class MainWindow(QMainWindow):
         self.bottom_polygon_selector = QComboBox()
         self.subtract_button = QPushButton("Subtract Intersection")
         self.subtract_button.clicked.connect(self.subtract_intersection)
+        self.merge_button = QPushButton("Merge Polygons")
+        self.merge_button.clicked.connect(self.merge_polygons)
 
         selector_layout = QHBoxLayout()
         selector_layout.addWidget(QLabel("Top Polygon:"))
@@ -218,6 +220,7 @@ class MainWindow(QMainWindow):
 
         left_layout.addLayout(selector_layout)
         left_layout.addWidget(self.subtract_button)
+        left_layout.addWidget(self.merge_button)
 
         self.update_status()
 
@@ -278,6 +281,63 @@ class MainWindow(QMainWindow):
         self.add_polygon(self._label_items.index(bottom_item))
 
         self._last_action = f"intersection subtracted ({top_item.name=}, {bottom_item.name=})"
+        self.update_status()
+
+    # setting top polygon to union of selected polygons and deleting the bottom one
+    def merge_polygons(self):
+        polygon1_id = self.top_polygon_selector.currentData()
+        polygon2_id = self.bottom_polygon_selector.currentData()
+
+        if polygon1_id is None or polygon2_id is None:
+            QMessageBox.warning(self, "Warning", "Please select two polygons to merge.")
+            return
+
+        polygon1_item = next((item for item in self._label_items if item.id == polygon1_id), None)
+        polygon2_item = next((item for item in self._label_items if item.id == polygon2_id), None)
+
+        if not polygon1_item or not polygon2_item:
+            QMessageBox.warning(self, "Warning", "Invalid polygon selection.")
+            return
+
+        if not polygon1_item.points or not polygon2_item.points:
+            QMessageBox.warning(self, "Warning", "Both polygons must have defined points.")
+            return
+
+        confirm = QMessageBox.question(
+            self,
+            "Confirm Merge",
+            f"Are you sure you want to merge '{polygon2_item.name}' into '{polygon1_item.name}'?",
+            QMessageBox.Yes | QMessageBox.No,
+        )
+
+        if confirm != QMessageBox.Yes:
+            return
+
+        polygon1 = Polygon(polygon1_item.points)
+        polygon2 = Polygon(polygon2_item.points)
+
+        if not polygon1.is_valid or not polygon2.is_valid:
+            QMessageBox.warning(self, "Warning", "One or both polygons are invalid.")
+            return
+
+        if polygon1_id == polygon2_id:
+            QMessageBox.warning(self, "Warning", "You selected the same polygons twice.")
+            return
+
+        merged_polygon = polygon1.union(polygon2)
+
+        if merged_polygon.is_empty:
+            QMessageBox.warning(self, "Warning", "The resulting polygon is empty. Merge operation aborted.")
+            return
+
+        polygon1_item.points = list(merged_polygon.exterior.coords)
+        self.remove_polygon(self._label_items.index(polygon1_item))
+        self.add_polygon(self._label_items.index(polygon1_item))
+        
+        self.remove_polygon(self._label_items.index(polygon2_item))
+        self.delete_item(polygon2_id)
+
+        self._last_action = f"{polygon1_item.name} and {polygon2_item.name} merged"
         self.update_status()
 
     def update_status(self):
